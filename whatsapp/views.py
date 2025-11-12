@@ -36,6 +36,39 @@ class TemplateViewSet(viewsets.ModelViewSet):
 	serializer_class = TemplateSerializer
 
 class WhatsAppWebhookView(APIView):
+	VERIFY_TOKEN = "mywhatsappverify124"  # Set this to your chosen verify token
+
+	def get(self, request, *args, **kwargs):
+		import logging
+		logger = logging.getLogger("whatsapp.webhook")
+		logger.info(f"All GET params: {dict(request.GET)}")
+		verify_token = request.GET.get('hub.verify_token')
+		challenge = request.GET.get('hub.challenge')
+		mode = request.GET.get('hub.mode')
+		logger.info(f"Webhook GET params: mode={mode}, verify_token={verify_token}, challenge={challenge}, expected_token={self.VERIFY_TOKEN}")
+		# For browser/manual GET, show the current VERIFY_TOKEN for debugging
+		if not verify_token and not challenge and not mode:
+			# Only return debug response if ALL are missing
+			return Response({"verify_token": self.VERIFY_TOKEN, "all_params": dict(request.GET)}, status=status.HTTP_200_OK)
+		from django.http import HttpResponse
+		if mode == 'subscribe' and verify_token == self.VERIFY_TOKEN:
+			return HttpResponse(challenge, status=200)
+		return Response({"error": "Verification token mismatch", "received": verify_token, "expected": self.VERIFY_TOKEN, "mode": mode, "challenge": challenge, "all_params": dict(request.GET)}, status=status.HTTP_403_FORBIDDEN)
+	def normalize_phone(self, phone):
+		"""
+		Normalize phone number to E.164 format (basic version).
+		Assumes WhatsApp always sends numbers in international format (no +),
+		but you may want to add your own logic for local numbers if needed.
+		"""
+		if not phone:
+			return ''
+		phone = str(phone).strip().replace(' ', '').replace('-', '')
+		if phone.startswith('+'):
+			phone = phone[1:]
+		# Remove leading zeros (if any)
+		phone = phone.lstrip('0')
+		return phone
+
 	def post(self, request, *args, **kwargs):
 		data = request.data
 		# Handle WhatsApp webhook events
@@ -49,16 +82,19 @@ class WhatsAppWebhookView(APIView):
 				# Handle incoming messages
 				for msg in messages:
 					from_number = msg.get('from')
+					normalized_number = self.normalize_phone(from_number)
 					text = msg.get('text', {}).get('body', '')
 					wa_id = msg.get('id')
-					customer, _ = Customer.objects.get_or_create(phone_number=from_number)
-					Message.objects.create(
-						customer=customer,
-						content=text,
-						direction='received',
-						status='delivered',
-						whatsapp_message_id=wa_id
-					)
+					customer, _ = Customer.objects.get_or_create(phone_number=normalized_number)
+					# Prevent duplicate messages by whatsapp_message_id
+					if not Message.objects.filter(whatsapp_message_id=wa_id).exists():
+						Message.objects.create(
+							customer=customer,
+							content=text,
+							direction='received',
+							status='delivered',
+							whatsapp_message_id=wa_id
+						)
 				# Handle delivery/read statuses
 				for status in statuses:
 					wa_id = status.get('id')
