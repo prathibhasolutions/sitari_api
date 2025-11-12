@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat with {{ customer.name }}</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fb; margin: 0; padding: 0; }
+        .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 16px #0002; padding: 2rem; }
+        h2 { color: #1a2947; margin-bottom: 1.5rem; }
+        .chat-box { background: #e9eef6; border-radius: 10px; padding: 1.2rem; height: 370px; overflow-y: auto; margin-bottom: 1.5rem; }
+        .msg { margin-bottom: 1.2rem; display: flex; }
+        .msg.sent { justify-content: flex-end; }
+        .msg.received { justify-content: flex-start; }
+        .bubble { padding: 0.85rem 1.3rem; border-radius: 18px; max-width: 65%; font-size: 1.08rem; position: relative; }
+        .msg.sent .bubble { background: #2563eb; color: #fff; border-bottom-right-radius: 6px; box-shadow: 0 2px 8px #2563eb22; }
+        .msg.received .bubble { background: #f1f5f9; color: #1a2947; border-bottom-left-radius: 6px; box-shadow: 0 2px 8px #0001; }
+        .timestamp { font-size: 0.92rem; color: #5a5a5a; margin-top: 0.3rem; text-align: right; opacity: 0.85; }
+        form { display: flex; gap: 1rem; }
+        input[type=text] { flex: 1; padding: 0.8rem; border-radius: 7px; border: 1px solid #bfc7d1; font-size: 1.05rem; background: #f8fafc; }
+        button { background: #2563eb; color: #fff; border: none; border-radius: 7px; padding: 0.8rem 1.7rem; font-size: 1.05rem; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #174a8c; }
+        .back-link { display: inline-block; margin-bottom: 1.5rem; color: #2563eb; text-decoration: none; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-link" href="/dashboard/">&larr; Back to Dashboard</a>
+        <h2>Chat with {{ customer.name }}</h2>
+        <div style="color:#444; font-size:1.1rem; margin-bottom:0.5rem;">Phone: <b>{{ customer.phone_number }}</b></div>
+        {% if api_response %}
+        <div style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:0.8rem 1.2rem; border-radius:7px; margin-bottom:1.2rem; word-break:break-word; overflow-x:auto;">
+            <b>WhatsApp API response:</b>
+            <pre style="margin:0; font-size:1rem; white-space:pre-wrap; word-break:break-word; overflow-x:auto;">{{ api_response|safe }}</pre>
+        </div>
+        {% endif %}
+        <div class="chat-box">
+            {% for msg in messages %}
+            <div class="msg {{ msg.direction }}">
+                <div class="bubble">
+                    {{ msg.content }}
+                    <div class="timestamp">{{ msg.timestamp|date:"M d, Y H:i" }} &middot; {{ msg.status|title }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <p>No messages yet.</p>
+            {% endfor %}
+        </div>
+        <form method="post">{% csrf_token %}
+            <input type="text" name="content" placeholder="Type a message..." required />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+</body>
+</html>
