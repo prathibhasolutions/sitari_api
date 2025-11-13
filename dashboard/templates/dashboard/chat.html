@@ -131,30 +131,7 @@
         .wa-form button:hover { background: #174a8c; }
         .wa-empty { color: #888; text-align: center; margin-top: 2rem; }
     </style>
-    <script>
-    function fetchMessages() {
-        fetch('{% url "dashboard-chat-messages" customer.id %}')
-            .then(response => response.json())
-            .then(data => {
-                const box = document.getElementById('wa-chat-box');
-                if (!data.messages.length) {
-                    box.innerHTML = '<div class="wa-empty">No messages yet.</div>';
-                    return;
-                }
-                box.innerHTML = data.messages.map(msg => `
-                    <div class="wa-msg ${msg.direction}">
-                        <div class="wa-bubble">
-                            ${msg.content}
-                            <div class="wa-timestamp">${msg.timestamp} &middot; ${msg.status}</div>
-                        </div>
-                    </div>
-                `).join('');
-                box.scrollTop = box.scrollHeight;
-            });
-    }
-    setInterval(fetchMessages, 2000);
-    window.onload = fetchMessages;
-    </script>
+    <!-- Removed duplicate fetchMessages function. Only the correct version above remains. -->
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
         .wa-container { display: flex; height: 100vh; }
