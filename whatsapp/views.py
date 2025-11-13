@@ -82,21 +82,61 @@ class WhatsAppWebhookView(APIView):
 				for msg in messages:
 					from_number = msg.get('from')
 					normalized_number = self.normalize_phone(from_number)
-					text = msg.get('text', {}).get('body', '')
 					wa_id = msg.get('id')
 					customer, _ = Customer.objects.get_or_create(phone_number=normalized_number)
+					# Handle text and media
+					text = msg.get('text', {}).get('body', '')
+					media_url = None
+					media_type = None
+					# Check for image
+					if msg.get('type') == 'image' and 'image' in msg:
+						media_id = msg['image'].get('id')
+						# Download media from WhatsApp
+						media_url, media_type = self.download_whatsapp_media(media_id)
+					# Check for document
+					elif msg.get('type') == 'document' and 'document' in msg:
+						media_id = msg['document'].get('id')
+						media_url, media_type = self.download_whatsapp_media(media_id)
 					# Prevent duplicate messages by whatsapp_message_id
 					if not Message.objects.filter(whatsapp_message_id=wa_id).exists():
-						Message.objects.create(
+						msg_obj = Message(
 							customer=customer,
 							content=text,
 							direction='received',
 							status='delivered',
 							whatsapp_message_id=wa_id
 						)
-				# Handle delivery/read statuses
-				for status in statuses:
-					wa_id = status.get('id')
-					status_str = status.get('status')
-					Message.objects.filter(whatsapp_message_id=wa_id).update(status=status_str)
-		return Response({"status": "received"}, status=status.HTTP_200_OK)
+						# Save media if present
+						if media_url:
+							import requests
+							from django.core.files.base import ContentFile
+							response = requests.get(media_url)
+							if response.status_code == 200:
+								filename = f"{wa_id}.{media_type.split('/')[-1] if media_type else 'bin'}"
+								msg_obj.media.save(filename, ContentFile(response.content), save=False)
+						msg_obj.save()
+
+		# ...existing code...
+
+	def download_whatsapp_media(self, media_id):
+		"""
+		Download media from WhatsApp using media_id and return (url, content_type)
+		"""
+		import requests
+		from .whatsapp_api import get_access_token
+		access_token = get_access_token()
+		# Step 1: Get media URL
+		url = f"https://graph.facebook.com/v19.0/{media_id}"
+		headers = {"Authorization": f"Bearer {access_token}"}
+		resp = requests.get(url, headers=headers)
+		if resp.status_code == 200:
+			media_url = resp.json().get('url')
+			# Step 2: Download media file
+			if media_url:
+				media_resp = requests.get(media_url, headers=headers)
+				content_type = media_resp.headers.get('Content-Type', '')
+				return media_url, content_type
+		return None, None
+
+	# Move status handling to correct indentation
+	# ...existing code...
