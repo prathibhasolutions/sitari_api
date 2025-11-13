@@ -22,32 +22,154 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <a class="back-link" href="/dashboard/">&larr; Back to Dashboard</a>
-        <h2>Chat with {{ customer.name }}</h2>
-        <div style="color:#444; font-size:1.1rem; margin-bottom:0.5rem;">Phone: <b>{{ customer.phone_number }}</b></div>
-        {% if api_response %}
-        <div style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:0.8rem 1.2rem; border-radius:7px; margin-bottom:1.2rem; word-break:break-word; overflow-x:auto;">
-            <b>WhatsApp API response:</b>
-            <pre style="margin:0; font-size:1rem; white-space:pre-wrap; word-break:break-word; overflow-x:auto;">{{ api_response|safe }}</pre>
-        </div>
-        {% endif %}
-        <div class="chat-box">
-            {% for msg in messages %}
-            <div class="msg {{ msg.direction }}">
-                <div class="bubble">
-                    {{ msg.content }}
-                    <div class="timestamp">{{ msg.timestamp|date:"M d, Y H:i" }} &middot; {{ msg.status|title }}</div>
-                </div>
+    <div class="wa-container">
+        <div class="wa-sidebar">
+            <div class="wa-sidebar-header">WhatsApp</div>
+            <div class="wa-sidebar-list">
+                {% for contact in customers %}
+                <a class="wa-contact" href="{% url 'dashboard-chat' contact.id %}" {% if contact.id == customer.id %}style="background:#2563eb;"{% endif %}>
+                    <!-- Profile picture removed -->
+                    <div class="wa-contact-info">
+                        <div class="wa-contact-name">{{ contact.name }}</div>
+                        <div class="wa-contact-phone">{{ contact.phone_number }}</div>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="wa-contact-empty">No customers found.</div>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p>No messages yet.</p>
-            {% endfor %}
         </div>
-        <form method="post">{% csrf_token %}
-            <input type="text" name="content" placeholder="Type a message..." required />
-            <button type="submit">Send</button>
-        </form>
+        <div class="wa-main">
+            <div class="wa-main-header">
+                <div class="wa-title">Chat with {{ customer.name }}</div>
+                <div style="color:#444; font-size:1.1rem; margin-top:0.5rem;">Phone: <b>{{ customer.phone_number }}</b></div>
+            </div>
+            <div class="wa-chat-box" id="wa-chat-box">
+                <!-- Messages will be loaded here by JS -->
+            </div>
+            <form method="post" class="wa-form">{% csrf_token %}
+                <input type="text" name="content" placeholder="Type a message..." />
+                <input type="file" name="media" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="max-width:140px;" />
+                <button type="submit">Send</button>
+            </form>
+        </div>
     </div>
+    <script>
+    function fetchMessages() {
+        fetch('{% url "dashboard-chat-messages" customer.id %}')
+            .then(response => response.json())
+            .then(data => {
+                const box = document.getElementById('wa-chat-box');
+                if (!data.messages.length) {
+                    box.innerHTML = '<div class="wa-empty">No messages yet.</div>';
+                    return;
+                }
+                box.innerHTML = data.messages.map(msg => {
+                    let mediaHtml = '';
+                    if (msg.media_url) {
+                        if (msg.media_type && msg.media_type.startsWith('image/')) {
+                            mediaHtml = `<img src="${msg.media_url}" style="max-width:220px;max-height:220px;border-radius:10px;margin-bottom:6px;" />`;
+                        } else {
+                            mediaHtml = `<a href="${msg.media_url}" target="_blank" style="display:block;margin-bottom:6px;color:#2563eb;">Download</a>`;
+                        }
+                    }
+                    return `
+                    <div class="wa-msg ${msg.direction}">
+                        <div class="wa-bubble">
+                            ${mediaHtml}${msg.content}
+                            <div class="wa-timestamp">${msg.timestamp} &middot; ${msg.status}</div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+    }
+    setInterval(fetchMessages, 2000);
+    window.onload = fetchMessages;
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
+        .wa-container { display: flex; height: 100vh; }
+        .wa-sidebar { width: 340px; background: #174a8c; color: #fff; display: flex; flex-direction: column; }
+        .wa-sidebar-header { font-size: 1.5rem; font-weight: 600; padding: 1.2rem 1.5rem; border-bottom: 1px solid #2563eb; background: #2563eb; }
+        .wa-sidebar-list { flex: 1; overflow-y: auto; }
+        .wa-contact { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1.2rem; border-bottom: 1px solid #2563eb; color: #fff; text-decoration: none; transition: background 0.2s; }
+        .wa-contact:hover, .wa-contact[style] { background: #2563eb !important; }
+        .wa-profile-pic { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+        .wa-profile-pic img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .wa-profile-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; color: #2563eb; background: #e0e7ff; border-radius: 50%; }
+        .wa-contact-info { flex: 1; }
+        .wa-contact-name { font-weight: 500; font-size: 1.1rem; }
+        .wa-contact-phone { font-size: 0.98rem; color: #b1b1b1; }
+        .wa-contact-empty { padding: 2rem; color: #b1b1b1; text-align: center; }
+        .wa-main { flex: 1; background: #f7f8fa; display: flex; flex-direction: column; }
+        .wa-main-header { padding: 1.5rem 2rem 1rem 2rem; border-bottom: 1px solid #e0e0e0; background: #fff; }
+        .wa-title { font-size: 2rem; color: #2563eb; font-weight: 600; }
+        .wa-chat-box { flex: 1; background: #ece5dd; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; }
+        .wa-msg { display: flex; }
+        .wa-msg.sent { justify-content: flex-end; }
+        .wa-msg.received { justify-content: flex-start; }
+        .wa-bubble { padding: 1rem 1.5rem; border-radius: 18px; max-width: 60%; font-size: 1.08rem; position: relative; }
+        .wa-msg.sent .wa-bubble { background: #2563eb; color: #fff; border-bottom-right-radius: 6px; box-shadow: 0 2px 8px #2563eb22; }
+        .wa-msg.received .wa-bubble { background: #fff; color: #1a2947; border-bottom-left-radius: 6px; box-shadow: 0 2px 8px #0001; }
+        .wa-timestamp { font-size: 0.92rem; color: #5a5a5a; margin-top: 0.3rem; text-align: right; opacity: 0.85; }
+        .wa-form { display: flex; gap: 1rem; padding: 1.5rem 2rem; background: #fff; border-top: 1px solid #e0e0e0; }
+        .wa-form input[type=text] { flex: 1; padding: 0.8rem; border-radius: 7px; border: 1px solid #bfc7d1; font-size: 1.05rem; background: #f8fafc; }
+        .wa-form button { background: #2563eb; color: #fff; border: none; border-radius: 7px; padding: 0.8rem 1.7rem; font-size: 1.05rem; cursor: pointer; transition: background 0.2s; }
+        .wa-form button:hover { background: #174a8c; }
+        .wa-empty { color: #888; text-align: center; margin-top: 2rem; }
+    </style>
+    <script>
+    function fetchMessages() {
+        fetch('{% url "dashboard-chat-messages" customer.id %}')
+            .then(response => response.json())
+            .then(data => {
+                const box = document.getElementById('wa-chat-box');
+                if (!data.messages.length) {
+                    box.innerHTML = '<div class="wa-empty">No messages yet.</div>';
+                    return;
+                }
+                box.innerHTML = data.messages.map(msg => `
+                    <div class="wa-msg ${msg.direction}">
+                        <div class="wa-bubble">
+                            ${msg.content}
+                            <div class="wa-timestamp">${msg.timestamp} &middot; ${msg.status}</div>
+                        </div>
+                    </div>
+                `).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+    }
+    setInterval(fetchMessages, 2000);
+    window.onload = fetchMessages;
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
+        .wa-container { display: flex; height: 100vh; }
+        .wa-sidebar { width: 320px; background: #111b21; color: #fff; display: flex; flex-direction: column; }
+        .wa-sidebar-header { font-size: 1.5rem; font-weight: 600; padding: 1.2rem 1.5rem; border-bottom: 1px solid #222; background: #202c33; }
+        .wa-sidebar-list { flex: 1; overflow-y: auto; }
+        .wa-contact { display: block; padding: 1rem 1.5rem; border-bottom: 1px solid #222; color: #fff; text-decoration: none; transition: background 0.2s; }
+        .wa-contact:hover { background: #222d35; }
+        .wa-contact-name { font-weight: 500; font-size: 1.1rem; }
+        .wa-contact-phone { font-size: 0.98rem; color: #b1b1b1; }
+        .wa-main { flex: 1; background: #f7f8fa; display: flex; flex-direction: column; }
+        .wa-main-header { padding: 1.5rem 2rem 1rem 2rem; border-bottom: 1px solid #e0e0e0; background: #fff; }
+        .wa-title { font-size: 2rem; color: #2563eb; font-weight: 600; }
+        .wa-chat-box { flex: 1; background: #ece5dd; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; }
+        .wa-msg { display: flex; }
+        .wa-msg.sent { justify-content: flex-end; }
+        .wa-msg.received { justify-content: flex-start; }
+        .wa-bubble { padding: 1rem 1.5rem; border-radius: 18px; max-width: 60%; font-size: 1.08rem; position: relative; }
+        .wa-msg.sent .wa-bubble { background: #2563eb; color: #fff; border-bottom-right-radius: 6px; box-shadow: 0 2px 8px #2563eb22; }
+        .wa-msg.received .wa-bubble { background: #fff; color: #1a2947; border-bottom-left-radius: 6px; box-shadow: 0 2px 8px #0001; }
+        .wa-timestamp { font-size: 0.92rem; color: #5a5a5a; margin-top: 0.3rem; text-align: right; opacity: 0.85; }
+        .wa-form { display: flex; gap: 1rem; padding: 1.5rem 2rem; background: #fff; border-top: 1px solid #e0e0e0; }
+        .wa-form input[type=text] { flex: 1; padding: 0.8rem; border-radius: 7px; border: 1px solid #bfc7d1; font-size: 1.05rem; background: #f8fafc; }
+        .wa-form button { background: #2563eb; color: #fff; border: none; border-radius: 7px; padding: 0.8rem 1.7rem; font-size: 1.05rem; cursor: pointer; transition: background 0.2s; }
+        .wa-form button:hover { background: #174a8c; }
+        .wa-empty { color: #888; text-align: center; margin-top: 2rem; }
+    </style>
 </body>
 </html>

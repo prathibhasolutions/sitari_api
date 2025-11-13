@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Customer, Message, Template
+from .models import WhatsAppConfig, Customer, Message, Template
+
+@admin.register(WhatsAppConfig)
+class WhatsAppConfigAdmin(admin.ModelAdmin):
+	list_display = ("access_token", "updated_at")
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):

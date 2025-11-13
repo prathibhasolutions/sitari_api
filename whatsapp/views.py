@@ -56,18 +56,17 @@ class WhatsAppWebhookView(APIView):
 		return Response({"error": "Verification token mismatch", "received": verify_token, "expected": self.VERIFY_TOKEN, "mode": mode, "challenge": challenge, "all_params": dict(request.GET)}, status=status.HTTP_403_FORBIDDEN)
 	def normalize_phone(self, phone):
 		"""
-		Normalize phone number to E.164 format (basic version).
-		Assumes WhatsApp always sends numbers in international format (no +),
-		but you may want to add your own logic for local numbers if needed.
+		Normalize phone number to E.164 format (always with '+').
+		Assumes WhatsApp always sends numbers in international format (no +).
 		"""
 		if not phone:
 			return ''
 		phone = str(phone).strip().replace(' ', '').replace('-', '')
 		if phone.startswith('+'):
 			phone = phone[1:]
-		# Remove leading zeros (if any)
 		phone = phone.lstrip('0')
-		return phone
+		# Always add '+' for storage/search
+		return f'+{phone}'
 
 	def post(self, request, *args, **kwargs):
 		data = request.data

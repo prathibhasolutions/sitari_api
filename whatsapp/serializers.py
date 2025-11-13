@@ -16,7 +16,8 @@ class MessageSerializer(serializers.ModelSerializer):
     template = TemplateSerializer(read_only=True)
     customer_id = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all(), source='customer', write_only=True)
     template_id = serializers.PrimaryKeyRelatedField(queryset=Template.objects.all(), source='template', write_only=True, required=False, allow_null=True)
+    media = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = Message
-        fields = ['id', 'customer', 'customer_id', 'template', 'template_id', 'content', 'direction', 'status', 'timestamp', 'whatsapp_message_id']
+        fields = ['id', 'customer', 'customer_id', 'template', 'template_id', 'content', 'media', 'direction', 'status', 'timestamp', 'whatsapp_message_id']

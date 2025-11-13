@@ -1,14 +1,18 @@
-import os
-import requests
 
-WHATSAPP_ACCESS_TOKEN = "EAAac186RskkBP3iG0yDWKxYhtmIqynjWBNoADt4HQzmlOPqcGgxTgFZAaNoKo8xmxDGr1WFqNZAwzChgN7gIScGfyo7y4wIC0WX9KMvYF9ePKNZCqZCs0lBCToDHxoQYjg6gkoIWNiFqPmoyutloOClZAa4un5AEbg4hJHjwH89D0DqZBy6zAGDVJDUF1ib8D6nehSEyJK60Xf7v6GjskdMxIqiNtLnZCedzzhimmyMwmZAFmrZCjJUO87LNwwj6BfsLLqKlsvGGp0zJZCrVfqzfVr"
+import requests
+from .models import WhatsAppConfig
 WHATSAPP_PHONE_NUMBER_ID = "830174150185579"
 
 
+def get_access_token():
+    config = WhatsAppConfig.objects.order_by('-updated_at').first()
+    return config.access_token if config else ''
+
 def send_whatsapp_message(to_number, template_name="hello_world", text=None):
     url = f"https://graph.facebook.com/v19.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"
+    access_token = get_access_token()
     headers = {
-        "Authorization": f"Bearer {WHATSAPP_ACCESS_TOKEN}",
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
     if text:

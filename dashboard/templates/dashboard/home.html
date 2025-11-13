@@ -21,49 +21,74 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>WhatsApp Dashboard</h1>
-        <div class="stats">
-            <div class="stat">
-                <h2>{{ total_customers }}</h2>
-                <p>Customers</p>
-            </div>
-            <div class="stat">
-                <h2>{{ total_messages }}</h2>
-                <p>Total Messages</p>
-            </div>
-            <div class="stat">
-                <h2>{{ sent_messages }}</h2>
-                <p>Sent Messages</p>
-            </div>
-            <div class="stat">
-                <h2>{{ received_messages }}</h2>
-                <p>Received Messages</p>
+    <div class="wa-container">
+        <div class="wa-sidebar">
+            <div class="wa-sidebar-header">WhatsApp</div>
+            <div class="wa-sidebar-list">
+                {% for customer in customers %}
+                <a class="wa-contact" href="{% url 'dashboard-chat' customer.id %}">
+                    <!-- Profile picture removed -->
+                    <div class="wa-contact-info">
+                        <div class="wa-contact-name">{{ customer.name }}</div>
+                        <div class="wa-contact-phone">{{ customer.phone_number }}</div>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="wa-contact-empty">No customers found.</div>
+                {% endfor %}
             </div>
         </div>
-        <div class="customer-list">
-            <h3>Customers</h3>
-            <table>
-                <tr>
-                    <th>Name</th>
-                    <th>Phone Number</th>
-                    <th>Email</th>
-                    <th>Last Updated</th>
-                    <th>Chat</th>
-                </tr>
-                {% for customer in customers %}
-                <tr>
-                    <td>{{ customer.name }}</td>
-                    <td>{{ customer.phone_number }}</td>
-                    <td>{{ customer.email }}</td>
-                    <td>{{ customer.updated_at|date:"Y-m-d H:i" }}</td>
-                    <td><a class="button" href="{% url 'dashboard-chat' customer.id %}">View Chat</a></td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5">No customers found.</td></tr>
-                {% endfor %}
-            </table>
+        <div class="wa-main">
+            <div class="wa-main-header">
+                <div class="wa-title">WhatsApp Dashboard</div>
+            </div>
+            <div class="wa-stats">
+                <div class="wa-stat"><span>{{ total_customers }}</span><br>Customers</div>
+                <div class="wa-stat"><span>{{ total_messages }}</span><br>Total Messages</div>
+                <div class="wa-stat"><span>{{ sent_messages }}</span><br>Sent</div>
+                <div class="wa-stat"><span>{{ received_messages }}</span><br>Received</div>
+            </div>
         </div>
     </div>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
+        .wa-container { display: flex; height: 100vh; }
+        .wa-sidebar { width: 340px; background: #174a8c; color: #fff; display: flex; flex-direction: column; }
+        .wa-sidebar-header { font-size: 1.5rem; font-weight: 600; padding: 1.2rem 1.5rem; border-bottom: 1px solid #2563eb; background: #2563eb; }
+        .wa-sidebar-list { flex: 1; overflow-y: auto; }
+        .wa-contact { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1.2rem; border-bottom: 1px solid #2563eb; color: #fff; text-decoration: none; transition: background 0.2s; }
+        .wa-contact:hover { background: #2563eb; }
+        .wa-profile-pic { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+        .wa-profile-pic img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .wa-profile-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; color: #2563eb; background: #e0e7ff; border-radius: 50%; }
+        .wa-contact-info { flex: 1; }
+        .wa-contact-name { font-weight: 500; font-size: 1.1rem; }
+        .wa-contact-phone { font-size: 0.98rem; color: #b1b1b1; }
+        .wa-contact-empty { padding: 2rem; color: #b1b1b1; text-align: center; }
+        .wa-main { flex: 1; background: #f7f8fa; display: flex; flex-direction: column; }
+        .wa-main-header { padding: 1.5rem 2rem 1rem 2rem; border-bottom: 1px solid #e0e0e0; background: #fff; }
+        .wa-title { font-size: 2rem; color: #2563eb; font-weight: 600; }
+        .wa-stats { display: flex; gap: 2.5rem; padding: 2.5rem 2rem; }
+        .wa-stat { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #0001; flex: 1; text-align: center; padding: 2rem 1rem; font-size: 1.2rem; color: #2563eb; font-weight: 500; }
+        .wa-stat span { font-size: 2.2rem; color: #174a8c; font-weight: 700; display: block; margin-bottom: 0.5rem; }
+    </style>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
+        .wa-container { display: flex; height: 100vh; }
+        .wa-sidebar { width: 320px; background: #111b21; color: #fff; display: flex; flex-direction: column; }
+        .wa-sidebar-header { font-size: 1.5rem; font-weight: 600; padding: 1.2rem 1.5rem; border-bottom: 1px solid #222; background: #202c33; }
+        .wa-sidebar-list { flex: 1; overflow-y: auto; }
+        .wa-contact { display: block; padding: 1rem 1.5rem; border-bottom: 1px solid #222; color: #fff; text-decoration: none; transition: background 0.2s; }
+        .wa-contact:hover { background: #222d35; }
+        .wa-contact-name { font-weight: 500; font-size: 1.1rem; }
+        .wa-contact-phone { font-size: 0.98rem; color: #b1b1b1; }
+        .wa-contact-empty { padding: 2rem; color: #b1b1b1; text-align: center; }
+        .wa-main { flex: 1; background: #f7f8fa; display: flex; flex-direction: column; }
+        .wa-main-header { padding: 1.5rem 2rem 1rem 2rem; border-bottom: 1px solid #e0e0e0; background: #fff; }
+        .wa-title { font-size: 2rem; color: #2563eb; font-weight: 600; }
+        .wa-stats { display: flex; gap: 2.5rem; padding: 2.5rem 2rem; }
+        .wa-stat { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #0001; flex: 1; text-align: center; padding: 2rem 1rem; font-size: 1.2rem; color: #2563eb; font-weight: 500; }
+        .wa-stat span { font-size: 2.2rem; color: #111b21; font-weight: 700; display: block; margin-bottom: 0.5rem; }
+    </style>
 </body>
 </html>
