@@ -116,7 +116,17 @@ class WhatsAppWebhookView(APIView):
 								msg_obj.media.save(filename, ContentFile(response.content), save=False)
 						msg_obj.save()
 
-		# ...existing code...
+		# Handle delivery/read statuses
+		for ent in entry:
+			changes = ent.get('changes', [])
+			for change in changes:
+				value = change.get('value', {})
+				statuses = value.get('statuses', [])
+				for status in statuses:
+					wa_id = status.get('id')
+					status_str = status.get('status')
+					Message.objects.filter(whatsapp_message_id=wa_id).update(status=status_str)
+		return Response({"status": "received"}, status=status.HTTP_200_OK)
 
 	def download_whatsapp_media(self, media_id):
 		"""
