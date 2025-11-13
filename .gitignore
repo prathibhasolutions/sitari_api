@@ -1,9 +1,4 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pyc
+
 
 # Virtual environment
 venv/
@@ -11,24 +6,6 @@ ENV/
 env/
 .venv/
 
-# Django
-*.log
-*.pot
-*.pyc
-*.pyo
-*.db
-*.sqlite3
-/staticfiles/
-/media/
 
-# VS Code
-.vscode/
 
-# OS
-.DS_Store
-Thumbs.db
 
-# Others
-*.swp
-*.swo
-.idea/

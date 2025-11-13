@@ -47,11 +47,22 @@
             <div class="wa-chat-box" id="wa-chat-box">
                 <!-- Messages will be loaded here by JS -->
             </div>
-            <form method="post" class="wa-form">{% csrf_token %}
+            <form method="post" class="wa-form" enctype="multipart/form-data">{% csrf_token %}
+                <button type="button" id="attach-btn" style="background:#fff; color:#2563eb; border-radius:50%; width:40px; height:40px; font-size:28px; border:none; margin-right:8px; box-shadow:0 2px 8px #2563eb22; cursor:pointer;">+</button>
+                <input type="file" id="file-input" name="media" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none;" />
                 <input type="text" name="content" placeholder="Type a message..." />
-                <input type="file" name="media" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="max-width:140px;" />
                 <button type="submit">Send</button>
             </form>
+            <script>
+            document.getElementById('attach-btn').onclick = function() {
+                document.getElementById('file-input').click();
+            };
+            document.getElementById('file-input').onchange = function() {
+                if (this.files.length > 0) {
+                    document.querySelector('input[name="content"]').focus();
+                }
+            };
+            </script>
         </div>
     </div>
     <script>
