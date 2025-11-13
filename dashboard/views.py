@@ -92,8 +92,15 @@ def chat_messages_api(request, customer_id):
     for m in messages:
         media_url = m.media.url if m.media else ''
         media_type = ''
-        if m.media and hasattr(m.media, 'file') and hasattr(m.media.file, 'content_type'):
-            media_type = m.media.file.content_type
+        if m.media:
+            # Try to get content_type from file, fallback to extension
+            if hasattr(m.media, 'file') and hasattr(m.media.file, 'content_type') and m.media.file.content_type:
+                media_type = m.media.file.content_type
+            else:
+                import mimetypes
+                guessed_type, _ = mimetypes.guess_type(media_url)
+                if guessed_type:
+                    media_type = guessed_type
         data.append({
             'content': m.content,
             'direction': m.direction,
