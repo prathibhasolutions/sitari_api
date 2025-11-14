@@ -48,8 +48,12 @@
                 <!-- Messages will be loaded here by JS -->
             </div>
             <form method="post" class="wa-form" enctype="multipart/form-data">{% csrf_token %}
-                <button type="button" id="attach-btn" style="background:#fff; color:#2563eb; border-radius:50%; width:40px; height:40px; font-size:28px; border:none; margin-right:8px; box-shadow:0 2px 8px #2563eb22; cursor:pointer;">+</button>
+                <button type="button" id="attach-btn" class="wa-tooltip-btn" style="background:#fff; color:#2563eb; border-radius:50%; width:40px; height:40px; font-size:28px; border:none; margin-right:8px; box-shadow:0 2px 8px #2563eb22; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" title="Upload">
+                    <span style="display:inline-block; width:28px; height:28px; text-align:center; line-height:28px;">+</span>
+                    <span class="wa-tooltip-text">Upload</span>
+                </button>
                 <input type="file" id="file-input" name="media" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none;" />
+                <div id="wa-preview" style="display:none;align-items:center;gap:12px;margin-bottom:8px;"></div>
                 <input type="text" name="content" placeholder="Type a message..." />
                 <button type="submit">Send</button>
             </form>
@@ -58,9 +62,52 @@
                 document.getElementById('file-input').click();
             };
             document.getElementById('file-input').onchange = function() {
+                const preview = document.getElementById('wa-preview');
+                preview.innerHTML = '';
                 if (this.files.length > 0) {
-                    document.querySelector('input[name="content"]').focus();
+                    const file = this.files[0];
+                    let previewHtml = '';
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            previewHtml = `<div style='position:relative;display:inline-block;'>
+                                <img src='${e.target.result}' style='max-width:120px;max-height:120px;border-radius:10px;border:2px solid #2563eb;display:block;' />
+                                    <button type='button' id='wa-clear-preview' style='position:absolute;top:8px;right:8px;background:#fff;color:#2563eb;border:none;border-radius:50%;width:24px;height:24px;font-size:18px;cursor:pointer;box-shadow:0 2px 8px #2563eb22;display:flex;align-items:center;justify-content:center;padding:0;line-height:24px;text-align:center;'>×</button>
+                            </div>`;
+                            preview.style.display = 'flex';
+                            preview.innerHTML = previewHtml;
+                            document.querySelector('input[name="content"]').focus();
+                            document.getElementById('wa-clear-preview').onclick = function() {
+                                document.getElementById('file-input').value = '';
+                                preview.style.display = 'none';
+                                preview.innerHTML = '';
+                            };
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        previewHtml = `<div style='position:relative;display:flex;align-items:center;gap:8px;'><span style='font-size:1.1rem;color:#2563eb;'>${file.name}</span><a href='#' style='color:#2563eb;text-decoration:underline;font-size:0.98rem;' onclick='return false;'>Preview not available</a><button type='button' id='wa-clear-preview' style='background:#fff;color:#2563eb;border:none;border-radius:50%;width:24px;height:24px;font-size:16px;cursor:pointer;'>×</button></div>`;
+                        preview.style.display = 'flex';
+                        preview.innerHTML = previewHtml;
+                        document.querySelector('input[name="content"]').focus();
+                        document.getElementById('wa-clear-preview').onclick = function() {
+                            document.getElementById('file-input').value = '';
+                            preview.style.display = 'none';
+                            preview.innerHTML = '';
+                        };
+                    }
+                } else {
+                    preview.style.display = 'none';
+                    preview.innerHTML = '';
                 }
+            };
+            // Tooltip show/hide logic
+            var attachBtn = document.getElementById('attach-btn');
+            var tooltip = attachBtn.querySelector('.wa-tooltip-text');
+            attachBtn.onmouseenter = function() {
+                tooltip.style.opacity = '1';
+            };
+            attachBtn.onmouseleave = function() {
+                tooltip.style.opacity = '0';
             };
             </script>
         </div>
@@ -77,18 +124,37 @@
                 }
                 box.innerHTML = data.messages.map(msg => {
                     let mediaHtml = '';
-                    if (msg.media_url) {
-                        if (msg.media_type && msg.media_type.startsWith('image/')) {
-                            mediaHtml = `<img src="${msg.media_url}" style="max-width:220px;max-height:220px;border-radius:10px;margin-bottom:6px;" />`;
+                            if (msg.media_url) {
+                                if (msg.media_type && msg.media_type.startsWith('image/')) {
+                                    mediaHtml = `<img src="${msg.media_url}" style="width:100%;height:auto;display:block;border-radius:12px;margin:0;padding:0;border:none;box-shadow:none;background:none;" />`;
                         } else {
                             mediaHtml = `<a href="${msg.media_url}" target="_blank" style="display:block;margin-bottom:6px;color:#2563eb;">Download</a>`;
+                        }
+                    }
+                    // WhatsApp-style tick marks for sent messages
+                    let statusHtml = '';
+                    if (msg.direction === 'sent') {
+                        // WhatsApp-style SVG tick icons
+                        if (msg.status === 'Pending') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M5 9l3 3 5-5' stroke='#b1b1b1' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
+                        } else if (msg.status === 'Sent') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M5 9l3 3 5-5' stroke='#888' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
+                        } else if (msg.status === 'Delivered') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:24px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M3 9l3 3 5-5' stroke='#2563eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg><svg viewBox='0 0 18 18' width='18' height='18' style='margin-left:-10px;'><path d='M7 11l3 3 5-5' stroke='#2563eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
+                        } else if (msg.status === 'Read') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:24px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M3 9l3 3 5-5' stroke='#25d366' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg><svg viewBox='0 0 18 18' width='18' height='18' style='margin-left:-10px;'><path d='M7 11l3 3 5-5' stroke='#25d366' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
+                        } else if (msg.status === 'Failed') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><line x1='5' y1='5' x2='13' y2='13' stroke='#d32f2f' stroke-width='2'/><line x1='13' y1='5' x2='5' y2='13' stroke='#d32f2f' stroke-width='2'/></svg></span>`;
+                        } else {
+                            statusHtml = '';
                         }
                     }
                     return `
                     <div class="wa-msg ${msg.direction}">
                         <div class="wa-bubble">
-                            ${mediaHtml}${msg.content}
-                            <div class="wa-timestamp">${msg.timestamp} &middot; ${msg.status}</div>
+                            ${mediaHtml}
+                            <span>${msg.content}</span>
+                            <div class="wa-timestamp">${msg.timestamp} ${statusHtml}</div>
                         </div>
                     </div>
                     `;
@@ -130,6 +196,23 @@
         .wa-form button { background: #2563eb; color: #fff; border: none; border-radius: 7px; padding: 0.8rem 1.7rem; font-size: 1.05rem; cursor: pointer; transition: background 0.2s; }
         .wa-form button:hover { background: #174a8c; }
         .wa-empty { color: #888; text-align: center; margin-top: 2rem; }
+        .wa-tooltip-btn { position: relative; }
+        .wa-tooltip-text {
+            position: absolute;
+            left: 50%;
+            top: -32px;
+            transform: translateX(-50%);
+            background: #2563eb;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.98rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
     </style>
     <script>
     function fetchMessages() {
@@ -143,21 +226,53 @@
                 }
                 box.innerHTML = data.messages.map(msg => {
                     let mediaHtml = '';
+                    let isImage = false;
                     if (msg.media_url) {
                         if (msg.media_type && msg.media_type.startsWith('image/')) {
-                            mediaHtml = `<img src="${msg.media_url}" style="max-width:220px;max-height:220px;border-radius:10px;margin-bottom:6px;" />`;
+                            mediaHtml = `<img src="${msg.media_url}" style="width:100%;height:auto;display:block;border-radius:12px;margin:0;padding:0;border:none;box-shadow:none;background:none;" />`;
+                            isImage = true;
                         } else {
                             mediaHtml = `<a href="${msg.media_url}" target="_blank" style="display:block;margin-bottom:6px;color:#2563eb;">Download</a>`;
                         }
                     }
-                    return `
-                    <div class="wa-msg ${msg.direction}">
-                        <div class="wa-bubble">
-                            ${mediaHtml}${msg.content}
-                            <div class="wa-timestamp">${msg.timestamp} &middot; ${msg.status}</div>
+                    // WhatsApp-style tick marks for sent messages
+                    let statusHtml = '';
+                    if (msg.direction === 'sent') {
+                        // WhatsApp-style SVG tick icons
+                        if (msg.status === 'Pending') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M5 9l3 3 5-5' stroke='#b1b1b1' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
+                        } else if (msg.status === 'Sent') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M5 9l3 3 5-5' stroke='#888' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
+                        } else if (msg.status === 'Delivered') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:24px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M3 9l3 3 5-5' stroke='#2563eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg><svg viewBox='0 0 18 18' width='18' height='18' style='margin-left:-10px;'><path d='M7 11l3 3 5-5' stroke='#2563eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
+                        } else if (msg.status === 'Read') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:24px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M3 9l3 3 5-5' stroke='#25d366' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg><svg viewBox='0 0 18 18' width='18' height='18' style='margin-left:-10px;'><path d='M7 11l3 3 5-5' stroke='#25d366' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
+                        } else if (msg.status === 'Failed') {
+                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><line x1='5' y1='5' x2='13' y2='13' stroke='#d32f2f' stroke-width='2'/><line x1='13' y1='5' x2='5' y2='13' stroke='#d32f2f' stroke-width='2'/></svg></span>`;
+                        } else {
+                            statusHtml = '';
+                        }
+                    }
+                    // If image and no text, remove bubble background
+                        if (isImage && (!msg.content || msg.content.trim() === '')) {
+                            return `
+                            <div class="wa-msg ${msg.direction}">
+                                <div style="padding:2px 2px 0 2px;border-radius:14px;max-width:340px;background:rgba(37,99,235,0.08);box-shadow:0 2px 8px #2563eb11;">
+                                    ${mediaHtml}
+                                    <div class="wa-timestamp" style="color:#5a5a5a;text-align:right;margin-top:4px;font-size:0.92rem;">${msg.timestamp} ${statusHtml}</div>
+                                </div>
+                            </div>
+                            `;
+                    } else {
+                        return `
+                        <div class="wa-msg ${msg.direction}">
+                            <div class="wa-bubble">
+                                ${mediaHtml}${msg.content}
+                                <div class="wa-timestamp">${msg.timestamp} ${statusHtml}</div>
+                            </div>
                         </div>
-                    </div>
-                    `;
+                        `;
+                    }
                 }).join('');
                 box.scrollTop = box.scrollHeight;
             });
