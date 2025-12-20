@@ -5,6 +5,15 @@ from django.shortcuts import render, get_object_or_404, redirect
 from whatsapp.models import Customer, Message
 from whatsapp.whatsapp_api import send_whatsapp_message
 
+
+def privacy_view(request):
+    return render(request, 'dashboard/privacy.html')
+
+
+def terms_view(request):
+    return render(request, 'dashboard/terms.html')
+
+
 def dashboard_home(request):
     total_customers = Customer.objects.count()
     total_messages = Message.objects.count()
