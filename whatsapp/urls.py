@@ -10,4 +10,5 @@ router.register(r'templates', views.TemplateViewSet, basename='template')
 urlpatterns = [
     path('', include(router.urls)),
     path('webhook/', views.WhatsAppWebhookView.as_view(), name='whatsapp-webhook'),
+    path('debug/', views.DebugConfigView.as_view(), name='debug-config'),
 ]

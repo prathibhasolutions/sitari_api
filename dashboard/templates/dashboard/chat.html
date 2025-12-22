@@ -1,311 +1,709 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Chat with {{ customer.name }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitari WhatsApp - {{ customer.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fb; margin: 0; padding: 0; }
-        .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 16px #0002; padding: 2rem; }
-        h2 { color: #1a2947; margin-bottom: 1.5rem; }
-        .chat-box { background: #e9eef6; border-radius: 10px; padding: 1.2rem; height: 370px; overflow-y: auto; margin-bottom: 1.5rem; }
-        .msg { margin-bottom: 1.2rem; display: flex; }
-        .msg.sent { justify-content: flex-end; }
-        .msg.received { justify-content: flex-start; }
-        .bubble { padding: 0.85rem 1.3rem; border-radius: 18px; max-width: 65%; font-size: 1.08rem; position: relative; }
-        .msg.sent .bubble { background: #2563eb; color: #fff; border-bottom-right-radius: 6px; box-shadow: 0 2px 8px #2563eb22; }
-        .msg.received .bubble { background: #f1f5f9; color: #1a2947; border-bottom-left-radius: 6px; box-shadow: 0 2px 8px #0001; }
-        .timestamp { font-size: 0.92rem; color: #5a5a5a; margin-top: 0.3rem; text-align: right; opacity: 0.85; }
-        form { display: flex; gap: 1rem; }
-        input[type=text] { flex: 1; padding: 0.8rem; border-radius: 7px; border: 1px solid #bfc7d1; font-size: 1.05rem; background: #f8fafc; }
-        button { background: #2563eb; color: #fff; border: none; border-radius: 7px; padding: 0.8rem 1.7rem; font-size: 1.05rem; cursor: pointer; transition: background 0.2s; }
-        button:hover { background: #174a8c; }
-        .back-link { display: inline-block; margin-bottom: 1.5rem; color: #2563eb; text-decoration: none; font-weight: 500; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-default: #111b21;
+            --bg-deeper: #0b141a;
+            --bg-panel: #202c33;
+            --bg-input: #2a3942;
+            --bg-outgoing: #005c4b;
+            --bg-incoming: #202c33;
+            --primary: #00a884;
+            --primary-strong: #25d366;
+            --text-primary: #e9edef;
+            --text-secondary: #8696a0;
+            --border: #2a3942;
+            --blue-check: #53bdeb;
+            --icon: #aebac1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-default);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* ===== LEFT PANEL / SIDEBAR ===== */
+        .sidebar {
+            width: 400px;
+            min-width: 300px;
+            background: var(--bg-default);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 10px 16px;
+            background: var(--bg-panel);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 59px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+        
+        .logo-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .search-box {
+            padding: 7px 12px;
+            background: var(--bg-default);
+        }
+        
+        .search-input {
+            display: flex;
+            align-items: center;
+            background: var(--bg-input);
+            border-radius: 8px;
+            padding: 7px 12px;
+        }
+        
+        .search-input svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+            margin-right: 20px;
+        }
+        
+        .search-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-input input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .contacts-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            cursor: pointer;
+            text-decoration: none;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        
+        .contact-item:hover {
+            background: var(--bg-input);
+        }
+        
+        .contact-item.active {
+            background: var(--bg-input);
+        }
+        
+        .contact-avatar {
+            width: 49px;
+            height: 49px;
+            border-radius: 50%;
+            background: var(--bg-panel);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 20px;
+            font-weight: 500;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .contact-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .contact-name {
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .contact-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .contact-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            margin-left: 10px;
+        }
+        
+        .contact-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .unread-badge {
+            background: var(--primary);
+            color: var(--bg-default);
+            font-size: 11px;
+            font-weight: 500;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+        }
+        
+        /* ===== MAIN CHAT AREA ===== */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-deeper);
+            position: relative;
+        }
+        
+        /* Chat wallpaper pattern */
+        .main-chat::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M20 20h4v4h-4zM40 40h4v4h-4zM60 20h4v4h-4zM20 60h4v4h-4zM60 60h4v4h-4z'/%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .chat-header {
+            background: var(--bg-panel);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            height: 59px;
+            z-index: 10;
+            border-left: 1px solid var(--border);
+        }
+        
+        .chat-header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-input);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-right: 15px;
+        }
+        
+        .chat-header-info {
+            flex: 1;
+        }
+        
+        .chat-header-name {
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+        
+        .chat-header-status {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Messages Container */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            z-index: 5;
+        }
+        
+        .message {
+            display: flex;
+            margin-bottom: 2px;
+        }
+        
+        .message.outgoing {
+            justify-content: flex-end;
+        }
+        
+        .message.incoming {
+            justify-content: flex-start;
+        }
+        
+        .bubble {
+            max-width: 65%;
+            padding: 6px 7px 8px 9px;
+            border-radius: 7.5px;
+            font-size: 14.2px;
+            line-height: 19px;
+            position: relative;
+        }
+        
+        .message.outgoing .bubble {
+            background: var(--bg-outgoing);
+            border-top-right-radius: 0;
+        }
+        
+        .message.incoming .bubble {
+            background: var(--bg-incoming);
+            border-top-left-radius: 0;
+        }
+        
+        .bubble-text {
+            display: inline;
+            word-wrap: break-word;
+        }
+        
+        .bubble-meta {
+            float: right;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            margin: 3px 0 -5px 10px;
+        }
+        
+        .bubble-time {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .message.incoming .bubble-time {
+            color: var(--text-secondary);
+        }
+        
+        /* Status Ticks */
+        .tick {
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .tick svg {
+            width: 16px;
+            height: 11px;
+        }
+        
+        .tick.pending svg path { fill: rgba(255,255,255,0.5); stroke: rgba(255,255,255,0.5); }
+        .tick.sent svg path { fill: rgba(255,255,255,0.6); stroke: rgba(255,255,255,0.6); }
+        .tick.delivered svg path { fill: rgba(255,255,255,0.6); stroke: rgba(255,255,255,0.6); }
+        .tick.read svg path { fill: #53bdeb; stroke: #53bdeb; }
+        
+        /* Make read ticks slightly brighter/bolder */
+        .tick.read svg {
+            filter: brightness(1.1);
+        }
+        
+        /* Media in messages */
+        .bubble-media {
+            max-width: 330px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        /* Input Area */
+        .input-area {
+            background: var(--bg-panel);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .input-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--icon);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s;
+        }
+        
+        .input-btn:hover {
+            color: var(--text-primary);
+        }
+        
+        .input-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+        
+        .message-input-wrapper {
+            flex: 1;
+            background: var(--bg-input);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 9px 12px;
+        }
+        
+        .message-input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 15px;
+            outline: none;
+        }
+        
+        .message-input-wrapper input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary);
+            color: var(--bg-default);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+        
+        .send-btn:hover {
+            background: var(--primary-strong);
+        }
+        
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        
+        /* Preview area */
+        .preview-area {
+            background: var(--bg-panel);
+            padding: 10px 16px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+        
+        .preview-area.show {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .preview-area img {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 8px;
+        }
+        
+        .preview-name {
+            flex: 1;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .preview-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+        
+        .preview-close:hover {
+            color: var(--text-primary);
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 40%;
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+        
+        /* Download link styling */
+        .download-link {
+            color: var(--blue-check);
+            text-decoration: none;
+        }
+        
+        .download-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <div class="wa-container">
-        <div class="wa-sidebar">
-            <div class="wa-sidebar-header">WhatsApp</div>
-            <div class="wa-sidebar-list">
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </div>
+                    <span class="logo-text">Sitari WhatsApp</span>
+                </div>
+            </div>
+            
+            <div class="search-box">
+                <div class="search-input">
+                    <svg viewBox="0 0 24 24"><path d="M15.009 13.805h-.636l-.22-.219a5.184 5.184 0 001.256-3.386 5.207 5.207 0 10-5.207 5.208 5.183 5.183 0 003.385-1.255l.221.22v.635l4.004 3.999 1.194-1.195-3.997-4.007zm-4.808 0a3.605 3.605 0 110-7.21 3.605 3.605 0 010 7.21z"/></svg>
+                    <input type="text" id="search-input" placeholder="Search or start new chat">
+                </div>
+            </div>
+            
+            <div class="contacts-list">
                 {% for contact in customers %}
-                <a class="wa-contact" href="{% url 'dashboard-chat' contact.id %}" {% if contact.id == customer.id %}style="background:#2563eb;"{% endif %}>
-                    <!-- Profile picture removed -->
-                    <div class="wa-contact-info">
-                        <div class="wa-contact-name">{{ contact.name }}</div>
-                        <div class="wa-contact-phone">{{ contact.phone_number }}</div>
+                <a class="contact-item {% if contact.id == customer.id %}active{% endif %}" href="{% url 'dashboard-chat' contact.id %}">
+                    <div class="contact-avatar">{% firstof contact.name|slice:":1"|upper contact.phone_number|slice:"-1:" %}</div>
+                    <div class="contact-info">
+                        <div class="contact-name">{% firstof contact.name contact.phone_number %}</div>
+                        <div class="contact-preview">{{ contact.last_message }}</div>
+                    </div>
+                    <div class="contact-meta">
+                        <div class="contact-time">{{ contact.last_message_time_display }}</div>
+                        {% if contact.unread_count > 0 %}
+                        <div class="unread-badge">{{ contact.unread_count }}</div>
+                        {% endif %}
                     </div>
                 </a>
                 {% empty %}
-                <div class="wa-contact-empty">No customers found.</div>
+                <div style="padding: 30px; text-align: center; color: var(--text-secondary);">
+                    No contacts yet
+                </div>
                 {% endfor %}
             </div>
         </div>
-        <div class="wa-main">
-            <div class="wa-main-header">
-                <div class="wa-title">Chat with {{ customer.name }}</div>
-                <div style="color:#444; font-size:1.1rem; margin-top:0.5rem;">Phone: <b>{{ customer.phone_number }}</b></div>
+        
+        <!-- Main Chat Area -->
+        <div class="main-chat">
+            <div class="chat-header">
+                <div class="chat-header-avatar">{% firstof customer.name|slice:":1"|upper customer.phone_number|slice:"-1:" %}</div>
+                <div class="chat-header-info">
+                    <div class="chat-header-name">{% firstof customer.name customer.phone_number %}</div>
+                    <div class="chat-header-status">{{ customer.phone_number }}</div>
+                </div>
             </div>
-            <div class="wa-chat-box" id="wa-chat-box">
-                <!-- Messages will be loaded here by JS -->
+            
+            <div class="messages-container" id="messages-container">
+                <!-- Messages loaded via JavaScript -->
             </div>
-            <form method="post" class="wa-form" enctype="multipart/form-data">{% csrf_token %}
-                <button type="button" id="attach-btn" class="wa-tooltip-btn" style="background:#fff; color:#2563eb; border-radius:50%; width:40px; height:40px; font-size:28px; border:none; margin-right:8px; box-shadow:0 2px 8px #2563eb22; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" title="Upload">
-                    <span style="display:inline-block; width:28px; height:28px; text-align:center; line-height:28px;">+</span>
-                    <span class="wa-tooltip-text">Upload</span>
+            
+            <div class="preview-area" id="preview-area">
+                <img id="preview-img" src="" alt="">
+                <span class="preview-name" id="preview-name"></span>
+                <button type="button" class="preview-close" onclick="clearPreview()">×</button>
+            </div>
+            
+            <form method="post" class="input-area" enctype="multipart/form-data">
+                {% csrf_token %}
+                <button type="button" class="input-btn" onclick="document.getElementById('file-input').click()" title="Attach">
+                    <svg viewBox="0 0 24 24"><path d="M1.816 15.556v.002c0 1.502.584 2.912 1.646 3.972s2.472 1.647 3.974 1.647a5.58 5.58 0 003.972-1.645l9.547-9.548c.769-.768 1.147-1.767 1.058-2.817-.079-.968-.548-1.927-1.319-2.698-1.594-1.592-4.068-1.711-5.517-.262l-7.916 7.915c-.881.881-.792 2.25.214 3.261.959.958 2.423 1.053 3.263.215l5.511-5.512c.28-.28.267-.722.053-.936l-.244-.244c-.191-.191-.567-.349-.957.04l-5.506 5.506c-.18.18-.635.127-.976-.214-.098-.097-.576-.613-.213-.973l7.915-7.917c.818-.817 2.267-.699 3.23.262.5.501.802 1.1.849 1.685.051.573-.156 1.111-.589 1.543l-9.547 9.549a3.97 3.97 0 01-2.829 1.171 3.975 3.975 0 01-2.83-1.173 3.973 3.973 0 01-1.172-2.828c0-1.071.415-2.076 1.172-2.83l7.209-7.211c.157-.157.264-.579.028-.814L11.5 4.36a.572.572 0 00-.834.018l-7.205 7.207a5.577 5.577 0 00-1.645 3.971z"/></svg>
                 </button>
-                <input type="file" id="file-input" name="media" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none;" />
-                <div id="wa-preview" style="display:none;align-items:center;gap:12px;margin-bottom:8px;"></div>
-                <input type="text" name="content" placeholder="Type a message..." />
-                <button type="submit">Send</button>
+                <input type="file" id="file-input" name="media" accept="image/*,application/pdf,.doc,.docx" style="display:none;" onchange="handleFileSelect(this)">
+                
+                <div class="message-input-wrapper">
+                    <input type="text" name="content" placeholder="Type a message" autocomplete="off">
+                </div>
+                
+                <button type="submit" class="send-btn" title="Send">
+                    <svg viewBox="0 0 24 24"><path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"/></svg>
+                </button>
             </form>
-            <script>
-            document.getElementById('attach-btn').onclick = function() {
-                document.getElementById('file-input').click();
-            };
-            document.getElementById('file-input').onchange = function() {
-                const preview = document.getElementById('wa-preview');
-                preview.innerHTML = '';
-                if (this.files.length > 0) {
-                    const file = this.files[0];
-                    let previewHtml = '';
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            previewHtml = `<div style='position:relative;display:inline-block;'>
-                                <img src='${e.target.result}' style='max-width:120px;max-height:120px;border-radius:10px;border:2px solid #2563eb;display:block;' />
-                                    <button type='button' id='wa-clear-preview' style='position:absolute;top:8px;right:8px;background:#fff;color:#2563eb;border:none;border-radius:50%;width:24px;height:24px;font-size:18px;cursor:pointer;box-shadow:0 2px 8px #2563eb22;display:flex;align-items:center;justify-content:center;padding:0;line-height:24px;text-align:center;'>×</button>
-                            </div>`;
-                            preview.style.display = 'flex';
-                            preview.innerHTML = previewHtml;
-                            document.querySelector('input[name="content"]').focus();
-                            document.getElementById('wa-clear-preview').onclick = function() {
-                                document.getElementById('file-input').value = '';
-                                preview.style.display = 'none';
-                                preview.innerHTML = '';
-                            };
-                        };
-                        reader.readAsDataURL(file);
-                    } else {
-                        previewHtml = `<div style='position:relative;display:flex;align-items:center;gap:8px;'><span style='font-size:1.1rem;color:#2563eb;'>${file.name}</span><a href='#' style='color:#2563eb;text-decoration:underline;font-size:0.98rem;' onclick='return false;'>Preview not available</a><button type='button' id='wa-clear-preview' style='background:#fff;color:#2563eb;border:none;border-radius:50%;width:24px;height:24px;font-size:16px;cursor:pointer;'>×</button></div>`;
-                        preview.style.display = 'flex';
-                        preview.innerHTML = previewHtml;
-                        document.querySelector('input[name="content"]').focus();
-                        document.getElementById('wa-clear-preview').onclick = function() {
-                            document.getElementById('file-input').value = '';
-                            preview.style.display = 'none';
-                            preview.innerHTML = '';
-                        };
-                    }
-                } else {
-                    preview.style.display = 'none';
-                    preview.innerHTML = '';
-                }
-            };
-            // Tooltip show/hide logic
-            var attachBtn = document.getElementById('attach-btn');
-            var tooltip = attachBtn.querySelector('.wa-tooltip-text');
-            attachBtn.onmouseenter = function() {
-                tooltip.style.opacity = '1';
-            };
-            attachBtn.onmouseleave = function() {
-                tooltip.style.opacity = '0';
-            };
-            </script>
         </div>
     </div>
+
     <script>
-    function fetchMessages() {
-        fetch('{% url "dashboard-chat-messages" customer.id %}')
-            .then(response => response.json())
-            .then(data => {
-                const box = document.getElementById('wa-chat-box');
-                if (!data.messages.length) {
-                    box.innerHTML = '<div class="wa-empty">No messages yet.</div>';
-                    return;
+        // File upload preview
+        function handleFileSelect(input) {
+            const previewArea = document.getElementById('preview-area');
+            const previewImg = document.getElementById('preview-img');
+            const previewName = document.getElementById('preview-name');
+            
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                previewName.textContent = file.name;
+                
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                        previewImg.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewImg.style.display = 'none';
+                    previewName.textContent = '📎 ' + file.name;
                 }
-                box.innerHTML = data.messages.map(msg => {
-                    let mediaHtml = '';
-                            if (msg.media_url) {
-                                if (msg.media_type && msg.media_type.startsWith('image/')) {
-                                    mediaHtml = `<img src="${msg.media_url}" style="width:100%;height:auto;display:block;border-radius:12px;margin:0;padding:0;border:none;box-shadow:none;background:none;" />`;
-                        } else {
-                            mediaHtml = `<a href="${msg.media_url}" target="_blank" style="display:block;margin-bottom:6px;color:#2563eb;">Download</a>`;
-                        }
-                    }
-                    // WhatsApp-style tick marks for sent messages
-                    let statusHtml = '';
-                    if (msg.direction === 'sent') {
-                        // WhatsApp-style SVG tick icons
-                        if (msg.status === 'Pending') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M5 9l3 3 5-5' stroke='#b1b1b1' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
-                        } else if (msg.status === 'Sent') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M5 9l3 3 5-5' stroke='#888' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
-                        } else if (msg.status === 'Delivered') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:24px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M3 9l3 3 5-5' stroke='#2563eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg><svg viewBox='0 0 18 18' width='18' height='18' style='margin-left:-10px;'><path d='M7 11l3 3 5-5' stroke='#2563eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
-                        } else if (msg.status === 'Read') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:24px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M3 9l3 3 5-5' stroke='#25d366' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg><svg viewBox='0 0 18 18' width='18' height='18' style='margin-left:-10px;'><path d='M7 11l3 3 5-5' stroke='#25d366' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
-                        } else if (msg.status === 'Failed') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><line x1='5' y1='5' x2='13' y2='13' stroke='#d32f2f' stroke-width='2'/><line x1='13' y1='5' x2='5' y2='13' stroke='#d32f2f' stroke-width='2'/></svg></span>`;
-                        } else {
-                            statusHtml = '';
-                        }
-                    }
-                    return `
-                    <div class="wa-msg ${msg.direction}">
-                        <div class="wa-bubble">
-                            ${mediaHtml}
-                            <span>${msg.content}</span>
-                            <div class="wa-timestamp">${msg.timestamp} ${statusHtml}</div>
-                        </div>
-                    </div>
-                    `;
-                }).join('');
-                box.scrollTop = box.scrollHeight;
-            });
-    }
-    setInterval(fetchMessages, 2000);
-    window.onload = fetchMessages;
-    </script>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
-        .wa-container { display: flex; height: 100vh; }
-        .wa-sidebar { width: 340px; background: #174a8c; color: #fff; display: flex; flex-direction: column; }
-        .wa-sidebar-header { font-size: 1.5rem; font-weight: 600; padding: 1.2rem 1.5rem; border-bottom: 1px solid #2563eb; background: #2563eb; }
-        .wa-sidebar-list { flex: 1; overflow-y: auto; }
-        .wa-contact { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1.2rem; border-bottom: 1px solid #2563eb; color: #fff; text-decoration: none; transition: background 0.2s; }
-        .wa-contact:hover, .wa-contact[style] { background: #2563eb !important; }
-        .wa-profile-pic { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
-        .wa-profile-pic img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-        .wa-profile-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; color: #2563eb; background: #e0e7ff; border-radius: 50%; }
-        .wa-contact-info { flex: 1; }
-        .wa-contact-name { font-weight: 500; font-size: 1.1rem; }
-        .wa-contact-phone { font-size: 0.98rem; color: #b1b1b1; }
-        .wa-contact-empty { padding: 2rem; color: #b1b1b1; text-align: center; }
-        .wa-main { flex: 1; background: #f7f8fa; display: flex; flex-direction: column; }
-        .wa-main-header { padding: 1.5rem 2rem 1rem 2rem; border-bottom: 1px solid #e0e0e0; background: #fff; }
-        .wa-title { font-size: 2rem; color: #2563eb; font-weight: 600; }
-        .wa-chat-box { flex: 1; background: #ece5dd; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; }
-        .wa-msg { display: flex; }
-        .wa-msg.sent { justify-content: flex-end; }
-        .wa-msg.received { justify-content: flex-start; }
-        .wa-bubble { padding: 1rem 1.5rem; border-radius: 18px; max-width: 60%; font-size: 1.08rem; position: relative; }
-        .wa-msg.sent .wa-bubble { background: #2563eb; color: #fff; border-bottom-right-radius: 6px; box-shadow: 0 2px 8px #2563eb22; }
-        .wa-msg.received .wa-bubble { background: #fff; color: #1a2947; border-bottom-left-radius: 6px; box-shadow: 0 2px 8px #0001; }
-        .wa-timestamp { font-size: 0.92rem; color: #5a5a5a; margin-top: 0.3rem; text-align: right; opacity: 0.85; }
-        .wa-form { display: flex; gap: 1rem; padding: 1.5rem 2rem; background: #fff; border-top: 1px solid #e0e0e0; }
-        .wa-form input[type=text] { flex: 1; padding: 0.8rem; border-radius: 7px; border: 1px solid #bfc7d1; font-size: 1.05rem; background: #f8fafc; }
-        .wa-form button { background: #2563eb; color: #fff; border: none; border-radius: 7px; padding: 0.8rem 1.7rem; font-size: 1.05rem; cursor: pointer; transition: background 0.2s; }
-        .wa-form button:hover { background: #174a8c; }
-        .wa-empty { color: #888; text-align: center; margin-top: 2rem; }
-        .wa-tooltip-btn { position: relative; }
-        .wa-tooltip-text {
-            position: absolute;
-            left: 50%;
-            top: -32px;
-            transform: translateX(-50%);
-            background: #2563eb;
-            color: #fff;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.98rem;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            z-index: 10;
+                
+                previewArea.classList.add('show');
+            }
         }
-    </style>
-    <script>
-    function fetchMessages() {
-        fetch('{% url "dashboard-chat-messages" customer.id %}')
-            .then(response => response.json())
-            .then(data => {
-                const box = document.getElementById('wa-chat-box');
-                if (!data.messages.length) {
-                    box.innerHTML = '<div class="wa-empty">No messages yet.</div>';
-                    return;
-                }
-                box.innerHTML = data.messages.map(msg => {
-                    let mediaHtml = '';
-                    let isImage = false;
-                    if (msg.media_url) {
-                        if (msg.media_type && msg.media_type.startsWith('image/')) {
-                            mediaHtml = `<img src="${msg.media_url}" style="width:100%;height:auto;display:block;border-radius:12px;margin:0;padding:0;border:none;box-shadow:none;background:none;" />`;
-                            isImage = true;
-                        } else {
-                            mediaHtml = `<a href="${msg.media_url}" target="_blank" style="display:block;margin-bottom:6px;color:#2563eb;">Download</a>`;
-                        }
+        
+        function clearPreview() {
+            document.getElementById('file-input').value = '';
+            document.getElementById('preview-area').classList.remove('show');
+            document.getElementById('preview-img').src = '';
+            document.getElementById('preview-name').textContent = '';
+        }
+        
+        // Single check SVG
+        const singleCheckSvg = `<svg viewBox="0 0 16 11"><path d="M11.071.653a.457.457 0 00-.304-.102.493.493 0 00-.381.178l-6.19 7.636-2.405-2.272a.463.463 0 00-.336-.146.47.47 0 00-.343.146l-.311.31a.445.445 0 00-.14.337c0 .136.047.25.14.343l2.996 2.996c.135.133.291.2.512.2a.682.682 0 00.496-.2l6.636-8.418a.479.479 0 00.108-.31.457.457 0 00-.102-.305l-.376-.393z"/></svg>`;
+        
+        // Double check SVG
+        const doubleCheckSvg = `<svg viewBox="0 0 16 11"><path d="M11.071.653a.457.457 0 00-.304-.102.493.493 0 00-.381.178l-6.19 7.636-2.405-2.272a.463.463 0 00-.336-.146.47.47 0 00-.343.146l-.311.31a.445.445 0 00-.14.337c0 .136.047.25.14.343l2.996 2.996c.135.133.291.2.512.2a.682.682 0 00.496-.2l6.636-8.418a.479.479 0 00.108-.31.457.457 0 00-.102-.305l-.376-.393z"/><path d="M15.071.653a.457.457 0 00-.304-.102.493.493 0 00-.381.178l-6.19 7.636" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>`;
+        
+        // Fetch and render messages
+        function fetchMessages() {
+            fetch('{% url "dashboard-chat-messages" customer.id %}')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('messages-container');
+                    
+                    if (!data.messages.length) {
+                        container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!</div>';
+                        return;
                     }
-                    // WhatsApp-style tick marks for sent messages
-                    let statusHtml = '';
-                    if (msg.direction === 'sent') {
-                        // WhatsApp-style SVG tick icons
-                        if (msg.status === 'Pending') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M5 9l3 3 5-5' stroke='#b1b1b1' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
-                        } else if (msg.status === 'Sent') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M5 9l3 3 5-5' stroke='#888' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
-                        } else if (msg.status === 'Delivered') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:24px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M3 9l3 3 5-5' stroke='#2563eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg><svg viewBox='0 0 18 18' width='18' height='18' style='margin-left:-10px;'><path d='M7 11l3 3 5-5' stroke='#2563eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
-                        } else if (msg.status === 'Read') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:24px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><path d='M3 9l3 3 5-5' stroke='#25d366' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg><svg viewBox='0 0 18 18' width='18' height='18' style='margin-left:-10px;'><path d='M7 11l3 3 5-5' stroke='#25d366' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg></span>`;
-                        } else if (msg.status === 'Failed') {
-                            statusHtml = `<span style="vertical-align:middle;display:inline-block;width:18px;height:18px;"><svg viewBox='0 0 18 18' width='18' height='18'><line x1='5' y1='5' x2='13' y2='13' stroke='#d32f2f' stroke-width='2'/><line x1='13' y1='5' x2='5' y2='13' stroke='#d32f2f' stroke-width='2'/></svg></span>`;
-                        } else {
-                            statusHtml = '';
+                    
+                    container.innerHTML = data.messages.map(msg => {
+                        // Handle media
+                        let mediaHtml = '';
+                        if (msg.media_url) {
+                            if (msg.media_type && msg.media_type.startsWith('image/')) {
+                                mediaHtml = `<img src="${msg.media_url}" class="bubble-media" alt="Image">`;
+                            } else {
+                                mediaHtml = `<a href="${msg.media_url}" target="_blank" class="download-link">📎 Download file</a><br>`;
+                            }
                         }
-                    }
-                    // If image and no text, remove bubble background
-                        if (isImage && (!msg.content || msg.content.trim() === '')) {
-                            return `
-                            <div class="wa-msg ${msg.direction}">
-                                <div style="padding:2px 2px 0 2px;border-radius:14px;max-width:340px;background:rgba(37,99,235,0.08);box-shadow:0 2px 8px #2563eb11;">
+                        
+                        // Handle status ticks for outgoing messages
+                        let tickHtml = '';
+                        if (msg.direction === 'sent') {
+                            const status = msg.status.toLowerCase();
+                            if (status === 'pending') {
+                                tickHtml = `<span class="tick pending">${singleCheckSvg}</span>`;
+                            } else if (status === 'sent') {
+                                tickHtml = `<span class="tick sent">${singleCheckSvg}</span>`;
+                            } else if (status === 'delivered') {
+                                tickHtml = `<span class="tick delivered">${doubleCheckSvg}</span>`;
+                            } else if (status === 'read') {
+                                tickHtml = `<span class="tick read">${doubleCheckSvg}</span>`;
+                            }
+                        }
+                        
+                        const direction = msg.direction === 'sent' ? 'outgoing' : 'incoming';
+                        
+                        return `
+                            <div class="message ${direction}">
+                                <div class="bubble">
                                     ${mediaHtml}
-                                    <div class="wa-timestamp" style="color:#5a5a5a;text-align:right;margin-top:4px;font-size:0.92rem;">${msg.timestamp} ${statusHtml}</div>
+                                    <span class="bubble-text">${msg.content}</span>
+                                    <span class="bubble-meta">
+                                        <span class="bubble-time">${msg.timestamp}</span>
+                                        ${tickHtml}
+                                    </span>
                                 </div>
                             </div>
-                            `;
-                    } else {
-                        return `
-                        <div class="wa-msg ${msg.direction}">
-                            <div class="wa-bubble">
-                                ${mediaHtml}${msg.content}
-                                <div class="wa-timestamp">${msg.timestamp} ${statusHtml}</div>
-                            </div>
-                        </div>
                         `;
-                    }
-                }).join('');
-                box.scrollTop = box.scrollHeight;
+                    }).join('');
+                    
+                    container.scrollTop = container.scrollHeight;
+                });
+        }
+        
+        // Initial load
+        fetchMessages();
+        
+        // Poll for new messages every 2 seconds
+        setInterval(fetchMessages, 2000);
+        
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.contact-item').forEach(item => {
+                const name = item.querySelector('.contact-name').textContent.toLowerCase();
+                const preview = item.querySelector('.contact-preview');
+                const previewText = preview ? preview.textContent.toLowerCase() : '';
+                item.style.display = (name.includes(query) || previewText.includes(query)) ? 'flex' : 'none';
             });
-    }
-    setInterval(fetchMessages, 2000);
-    window.onload = fetchMessages;
+        });
     </script>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
-        .wa-container { display: flex; height: 100vh; }
-        .wa-sidebar { width: 320px; background: #111b21; color: #fff; display: flex; flex-direction: column; }
-        .wa-sidebar-header { font-size: 1.5rem; font-weight: 600; padding: 1.2rem 1.5rem; border-bottom: 1px solid #222; background: #202c33; }
-        .wa-sidebar-list { flex: 1; overflow-y: auto; }
-        .wa-contact { display: block; padding: 1rem 1.5rem; border-bottom: 1px solid #222; color: #fff; text-decoration: none; transition: background 0.2s; }
-        .wa-contact:hover { background: #222d35; }
-        .wa-contact-name { font-weight: 500; font-size: 1.1rem; }
-        .wa-contact-phone { font-size: 0.98rem; color: #b1b1b1; }
-        .wa-main { flex: 1; background: #f7f8fa; display: flex; flex-direction: column; }
-        .wa-main-header { padding: 1.5rem 2rem 1rem 2rem; border-bottom: 1px solid #e0e0e0; background: #fff; }
-        .wa-title { font-size: 2rem; color: #2563eb; font-weight: 600; }
-        .wa-chat-box { flex: 1; background: #ece5dd; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; }
-        .wa-msg { display: flex; }
-        .wa-msg.sent { justify-content: flex-end; }
-        .wa-msg.received { justify-content: flex-start; }
-        .wa-bubble { padding: 1rem 1.5rem; border-radius: 18px; max-width: 60%; font-size: 1.08rem; position: relative; }
-        .wa-msg.sent .wa-bubble { background: #2563eb; color: #fff; border-bottom-right-radius: 6px; box-shadow: 0 2px 8px #2563eb22; }
-        .wa-msg.received .wa-bubble { background: #fff; color: #1a2947; border-bottom-left-radius: 6px; box-shadow: 0 2px 8px #0001; }
-        .wa-timestamp { font-size: 0.92rem; color: #5a5a5a; margin-top: 0.3rem; text-align: right; opacity: 0.85; }
-        .wa-form { display: flex; gap: 1rem; padding: 1.5rem 2rem; background: #fff; border-top: 1px solid #e0e0e0; }
-        .wa-form input[type=text] { flex: 1; padding: 0.8rem; border-radius: 7px; border: 1px solid #bfc7d1; font-size: 1.05rem; background: #f8fafc; }
-        .wa-form button { background: #2563eb; color: #fff; border: none; border-radius: 7px; padding: 0.8rem 1.7rem; font-size: 1.05rem; cursor: pointer; transition: background 0.2s; }
-        .wa-form button:hover { background: #174a8c; }
-        .wa-empty { color: #888; text-align: center; margin-top: 2rem; }
-    </style>
 </body>
 </html>

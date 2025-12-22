@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-huk%n1h)&-fhiuuzy-gtofsry+2dys4oz9fr&=yfu-6v9h1ehm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['www.api.sitarisolutions.in', 'api.sitarisolutions.in', '65.0.89.60', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['www.whatsapp.sitarisolutions.in', 'whatsapp.sitarisolutions.in', '65.0.89.209', 'localhost', '127.0.0.1']
 
 
 # Application definition

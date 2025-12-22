@@ -1,94 +1,405 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>WhatsApp Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitari WhatsApp - Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
-        .container { max-width: 1100px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 2rem; }
-        .stats { display: flex; gap: 2rem; margin-bottom: 2rem; }
-        .stat { background: #f1f3f6; padding: 1.5rem 2.5rem; border-radius: 10px; flex: 1; text-align: center; }
-        .stat h2 { margin: 0 0 0.5rem 0; font-size: 2.2rem; color: #2d6cdf; }
-        .stat p { margin: 0; color: #555; font-size: 1.1rem; }
-        h1 { margin-bottom: 2rem; color: #2d6cdf; }
-        .customer-list { margin-top: 2rem; }
-        .customer-list h3 { margin-bottom: 1rem; }
-        table { width: 100%; border-collapse: collapse; background: #fff; }
-        th, td { padding: 0.8rem 1rem; border-bottom: 1px solid #eee; text-align: left; }
-        th { background: #f5f7fa; color: #333; }
-        tr:last-child td { border-bottom: none; }
-        a.button { background: #2d6cdf; color: #fff; padding: 0.5rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background 0.2s; }
-        a.button:hover { background: #174a8c; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-default: #111b21;
+            --bg-deeper: #0b141a;
+            --bg-panel: #202c33;
+            --bg-input: #2a3942;
+            --primary: #00a884;
+            --primary-strong: #25d366;
+            --text-primary: #e9edef;
+            --text-secondary: #8696a0;
+            --border: #2a3942;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-default);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 400px;
+            min-width: 300px;
+            background: var(--bg-default);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 10px 16px;
+            background: var(--bg-panel);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 59px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+        
+        .logo-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .search-box {
+            padding: 7px 12px;
+            background: var(--bg-default);
+        }
+        
+        .search-input {
+            display: flex;
+            align-items: center;
+            background: var(--bg-input);
+            border-radius: 8px;
+            padding: 7px 12px;
+        }
+        
+        .search-input svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+            margin-right: 20px;
+        }
+        
+        .search-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-input input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .contacts-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            cursor: pointer;
+            text-decoration: none;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        
+        .contact-item:hover {
+            background: var(--bg-input);
+        }
+        
+        .contact-avatar {
+            width: 49px;
+            height: 49px;
+            border-radius: 50%;
+            background: var(--bg-panel);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 20px;
+            font-weight: 500;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .contact-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .contact-name {
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .contact-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .contact-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            margin-left: 10px;
+        }
+        
+        .contact-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .unread-badge {
+            background: var(--primary);
+            color: var(--bg-default);
+            font-size: 11px;
+            font-weight: 500;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-deeper);
+        }
+        
+        .main-header {
+            background: var(--bg-panel);
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            height: 59px;
+            border-left: 1px solid var(--border);
+        }
+        
+        .main-header h1 {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .dashboard-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        
+        .welcome-section {
+            text-align: center;
+            padding: 60px 40px;
+            background: var(--bg-panel);
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .welcome-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+        
+        .welcome-icon svg {
+            width: 60px;
+            height: 60px;
+            fill: white;
+        }
+        
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 300;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        
+        .welcome-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            max-width: 480px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: var(--bg-panel);
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
-    <div class="wa-container">
-        <div class="wa-sidebar">
-            <div class="wa-sidebar-header">WhatsApp</div>
-            <div class="wa-sidebar-list">
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </div>
+                    <span class="logo-text">Sitari WhatsApp</span>
+                </div>
+            </div>
+            
+            <div class="search-box">
+                <div class="search-input">
+                    <svg viewBox="0 0 24 24"><path d="M15.009 13.805h-.636l-.22-.219a5.184 5.184 0 001.256-3.386 5.207 5.207 0 10-5.207 5.208 5.183 5.183 0 003.385-1.255l.221.22v.635l4.004 3.999 1.194-1.195-3.997-4.007zm-4.808 0a3.605 3.605 0 110-7.21 3.605 3.605 0 010 7.21z"/></svg>
+                    <input type="text" id="search-input" placeholder="Search or start new chat">
+                </div>
+            </div>
+            
+            <div class="contacts-list">
                 {% for customer in customers %}
-                <a class="wa-contact" href="{% url 'dashboard-chat' customer.id %}">
-                    <!-- Profile picture removed -->
-                    <div class="wa-contact-info">
-                        <div class="wa-contact-name">{{ customer.name }}</div>
-                        <div class="wa-contact-phone">{{ customer.phone_number }}</div>
+                <a class="contact-item" href="{% url 'dashboard-chat' customer.id %}">
+                    <div class="contact-avatar">{% firstof customer.name|slice:":1"|upper customer.phone_number|slice:"-1:" %}</div>
+                    <div class="contact-info">
+                        <div class="contact-name">{% firstof customer.name customer.phone_number %}</div>
+                        <div class="contact-preview">{{ customer.last_message }}</div>
+                    </div>
+                    <div class="contact-meta">
+                        <div class="contact-time">{{ customer.last_message_time_display }}</div>
+                        {% if customer.unread_count > 0 %}
+                        <div class="unread-badge">{{ customer.unread_count }}</div>
+                        {% endif %}
                     </div>
                 </a>
                 {% empty %}
-                <div class="wa-contact-empty">No customers found.</div>
+                <div style="padding: 30px; text-align: center; color: var(--text-secondary);">
+                    No contacts yet
+                </div>
                 {% endfor %}
             </div>
         </div>
-        <div class="wa-main">
-            <div class="wa-main-header">
-                <div class="wa-title">WhatsApp Dashboard</div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="main-header">
+                <h1>Dashboard</h1>
             </div>
-            <div class="wa-stats">
-                <div class="wa-stat"><span>{{ total_customers }}</span><br>Customers</div>
-                <div class="wa-stat"><span>{{ total_messages }}</span><br>Total Messages</div>
-                <div class="wa-stat"><span>{{ sent_messages }}</span><br>Sent</div>
-                <div class="wa-stat"><span>{{ received_messages }}</span><br>Received</div>
+            
+            <div class="dashboard-content">
+                <div class="welcome-section">
+                    <div class="welcome-icon">
+                        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </div>
+                    <h2 class="welcome-title">Sitari WhatsApp</h2>
+                    <p class="welcome-subtitle">
+                        Send and receive messages seamlessly. Select a contact from the left panel to start chatting, 
+                        or view your messaging statistics below.
+                    </p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ total_customers }}</div>
+                        <div class="stat-label">Customers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ total_messages }}</div>
+                        <div class="stat-label">Total Messages</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ sent_messages }}</div>
+                        <div class="stat-label">Sent</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ received_messages }}</div>
+                        <div class="stat-label">Received</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
-        .wa-container { display: flex; height: 100vh; }
-        .wa-sidebar { width: 340px; background: #174a8c; color: #fff; display: flex; flex-direction: column; }
-        .wa-sidebar-header { font-size: 1.5rem; font-weight: 600; padding: 1.2rem 1.5rem; border-bottom: 1px solid #2563eb; background: #2563eb; }
-        .wa-sidebar-list { flex: 1; overflow-y: auto; }
-        .wa-contact { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1.2rem; border-bottom: 1px solid #2563eb; color: #fff; text-decoration: none; transition: background 0.2s; }
-        .wa-contact:hover { background: #2563eb; }
-        .wa-profile-pic { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
-        .wa-profile-pic img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-        .wa-profile-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; color: #2563eb; background: #e0e7ff; border-radius: 50%; }
-        .wa-contact-info { flex: 1; }
-        .wa-contact-name { font-weight: 500; font-size: 1.1rem; }
-        .wa-contact-phone { font-size: 0.98rem; color: #b1b1b1; }
-        .wa-contact-empty { padding: 2rem; color: #b1b1b1; text-align: center; }
-        .wa-main { flex: 1; background: #f7f8fa; display: flex; flex-direction: column; }
-        .wa-main-header { padding: 1.5rem 2rem 1rem 2rem; border-bottom: 1px solid #e0e0e0; background: #fff; }
-        .wa-title { font-size: 2rem; color: #2563eb; font-weight: 600; }
-        .wa-stats { display: flex; gap: 2.5rem; padding: 2.5rem 2rem; }
-        .wa-stat { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #0001; flex: 1; text-align: center; padding: 2rem 1rem; font-size: 1.2rem; color: #2563eb; font-weight: 500; }
-        .wa-stat span { font-size: 2.2rem; color: #174a8c; font-weight: 700; display: block; margin-bottom: 0.5rem; }
-    </style>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #ece5dd; margin: 0; }
-        .wa-container { display: flex; height: 100vh; }
-        .wa-sidebar { width: 320px; background: #111b21; color: #fff; display: flex; flex-direction: column; }
-        .wa-sidebar-header { font-size: 1.5rem; font-weight: 600; padding: 1.2rem 1.5rem; border-bottom: 1px solid #222; background: #202c33; }
-        .wa-sidebar-list { flex: 1; overflow-y: auto; }
-        .wa-contact { display: block; padding: 1rem 1.5rem; border-bottom: 1px solid #222; color: #fff; text-decoration: none; transition: background 0.2s; }
-        .wa-contact:hover { background: #222d35; }
-        .wa-contact-name { font-weight: 500; font-size: 1.1rem; }
-        .wa-contact-phone { font-size: 0.98rem; color: #b1b1b1; }
-        .wa-contact-empty { padding: 2rem; color: #b1b1b1; text-align: center; }
-        .wa-main { flex: 1; background: #f7f8fa; display: flex; flex-direction: column; }
-        .wa-main-header { padding: 1.5rem 2rem 1rem 2rem; border-bottom: 1px solid #e0e0e0; background: #fff; }
-        .wa-title { font-size: 2rem; color: #2563eb; font-weight: 600; }
-        .wa-stats { display: flex; gap: 2.5rem; padding: 2.5rem 2rem; }
-        .wa-stat { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #0001; flex: 1; text-align: center; padding: 2rem 1rem; font-size: 1.2rem; color: #2563eb; font-weight: 500; }
-        .wa-stat span { font-size: 2.2rem; color: #111b21; font-weight: 700; display: block; margin-bottom: 0.5rem; }
-    </style>
+    
+    <script>
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.contact-item').forEach(item => {
+                const name = item.querySelector('.contact-name').textContent.toLowerCase();
+                const phone = item.querySelector('.contact-phone').textContent.toLowerCase();
+                item.style.display = (name.includes(query) || phone.includes(query)) ? 'flex' : 'none';
+            });
+        });
+    </script>
 </body>
 </html>

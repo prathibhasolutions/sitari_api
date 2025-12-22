@@ -10,7 +10,7 @@ class WhatsAppConfig(models.Model):
 
 
 class Customer(models.Model):
-	name = models.CharField(max_length=255)
+	name = models.CharField(max_length=255, blank=True, default='')
 	phone_number = models.CharField(
 		max_length=20,
 		unique=True,
@@ -21,7 +21,11 @@ class Customer(models.Model):
 	updated_at = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return f"{self.name} ({self.phone_number})"
+		return f"{self.name} ({self.phone_number})" if self.name else self.phone_number
+	
+	def display_name(self):
+		"""Return name if available, otherwise phone number"""
+		return self.name if self.name else self.phone_number
 
 
 class Template(models.Model):
@@ -50,10 +54,12 @@ class Message(models.Model):
 	template = models.ForeignKey(Template, on_delete=models.SET_NULL, null=True, blank=True)
 	content = models.TextField(blank=True)
 	media = models.FileField(upload_to='chat_media/', blank=True, null=True)
+	media_type = models.CharField(max_length=100, blank=True, null=True, help_text="MIME type of the media file")
 	direction = models.CharField(max_length=10, choices=DIRECTION_CHOICES)
 	status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 	timestamp = models.DateTimeField(auto_now_add=True)
 	whatsapp_message_id = models.CharField(max_length=100, blank=True, null=True)
+	is_read = models.BooleanField(default=False, help_text="Whether message has been read in dashboard")
 
 	def __str__(self):
 		return f"{self.direction.title()} to {self.customer.phone_number} at {self.timestamp}" 
