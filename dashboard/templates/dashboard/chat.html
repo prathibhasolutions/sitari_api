@@ -57,6 +57,38 @@
             height: 59px;
         }
         
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .header-btn:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+        
+        .header-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+        
         .logo {
             display: flex;
             align-items: center;
@@ -261,6 +293,109 @@
             color: var(--text-secondary);
         }
         
+        .chat-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        
+        .assign-dropdown {
+            position: relative;
+        }
+        
+        .assign-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .assign-btn:hover {
+            background: var(--bg-panel);
+            border-color: var(--primary);
+        }
+        
+        .assign-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+        
+        .assign-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 5px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-width: 200px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            display: none;
+        }
+        
+        .assign-dropdown-menu.show {
+            display: block;
+        }
+        
+        .assign-dropdown-item {
+            padding: 10px 15px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .assign-dropdown-item:hover {
+            background: var(--bg-input);
+        }
+        
+        .assign-dropdown-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .assign-dropdown-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .assign-dropdown-item.active {
+            background: var(--primary);
+            color: var(--bg-default);
+        }
+        
+        .assign-dropdown-item .agent-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-input);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .assigned-badge {
+            background: var(--primary);
+            color: var(--bg-default);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+
         /* Messages Container */
         .messages-container {
             flex: 1;
@@ -518,7 +653,30 @@
                     <div class="logo-icon">
                         <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     </div>
-                    <span class="logo-text">Sitari WhatsApp</span>
+                    <div>
+                        <span class="logo-text">Sitari WhatsApp</span>
+                        {% if is_agent and agent_name %}
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                            <svg viewBox="0 0 24 24" style="width: 12px; height: 12px; fill: var(--primary); vertical-align: middle; margin-right: 4px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            {{ agent_name }}
+                        </div>
+                        {% elif is_admin %}
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                            <svg viewBox="0 0 24 24" style="width: 12px; height: 12px; fill: var(--primary); vertical-align: middle; margin-right: 4px;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                            Admin
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="header-actions">
+                    {% if is_admin %}
+                    <a href="/admin/" class="header-btn" title="Django Admin">
+                        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'logout' %}" class="header-btn" title="Logout">
+                        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                    </a>
                 </div>
             </div>
             
@@ -557,9 +715,37 @@
             <div class="chat-header">
                 <div class="chat-header-avatar">{% firstof customer.name|slice:":1"|upper customer.phone_number|slice:"-1:" %}</div>
                 <div class="chat-header-info">
-                    <div class="chat-header-name">{% firstof customer.name customer.phone_number %}</div>
+                    <div class="chat-header-name">
+                        {% firstof customer.name customer.phone_number %}
+                        {% if customer.assigned_agent %}
+                        <span class="assigned-badge">{{ customer.assigned_agent.name }}</span>
+                        {% endif %}
+                    </div>
                     <div class="chat-header-status">{{ customer.phone_number }}</div>
                 </div>
+                {% if is_admin %}
+                <div class="chat-header-actions">
+                    <div class="assign-dropdown">
+                        <button type="button" class="assign-btn" onclick="toggleAssignDropdown()">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <span id="assign-btn-text">{% if customer.assigned_agent %}{{ customer.assigned_agent.name }}{% else %}Assign{% endif %}</span>
+                            <svg viewBox="0 0 24 24" style="width: 12px; height: 12px;"><path d="M7 10l5 5 5-5z"/></svg>
+                        </button>
+                        <div class="assign-dropdown-menu" id="assign-dropdown-menu">
+                            <div class="assign-dropdown-item {% if not customer.assigned_agent %}active{% endif %}" onclick="assignChat('')">
+                                <div class="agent-avatar">—</div>
+                                <span>Unassigned</span>
+                            </div>
+                            {% for agent in agents %}
+                            <div class="assign-dropdown-item {% if customer.assigned_agent.id == agent.id %}active{% endif %}" onclick="assignChat('{{ agent.id }}')">
+                                <div class="agent-avatar">{{ agent.name|slice:":1"|upper }}</div>
+                                <span>{{ agent.name }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
             
             <div class="messages-container" id="messages-container">
@@ -704,6 +890,55 @@
                 item.style.display = (name.includes(query) || previewText.includes(query)) ? 'flex' : 'none';
             });
         });
+        
+        // Assign dropdown functionality
+        function toggleAssignDropdown() {
+            const menu = document.getElementById('assign-dropdown-menu');
+            menu.classList.toggle('show');
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.querySelector('.assign-dropdown');
+            const menu = document.getElementById('assign-dropdown-menu');
+            if (dropdown && menu && !dropdown.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+        
+        function assignChat(agentId) {
+            const customerId = {{ customer.id }};
+            const csrfToken = '{{ csrf_token }}';
+            
+            fetch(`/chat/${customerId}/assign/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: `agent_id=${agentId}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `HTTP error ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Reload page to update badge
+                    location.reload();
+                } else {
+                    alert('Failed to assign: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to assign chat: ' + error.message);
+            });
+        }
     </script>
 </body>
 </html>

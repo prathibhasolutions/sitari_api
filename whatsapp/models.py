@@ -1,5 +1,36 @@
 
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
+
+
+class Agent(models.Model):
+    """Agent model for agent portal login"""
+    name = models.CharField(max_length=255)
+    mobile_number = models.CharField(
+        max_length=20,
+        unique=True,
+        help_text="Mobile number for agent login"
+    )
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.mobile_number})"
+
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        return check_password(raw_password, self.password)
+
+    def save(self, *args, **kwargs):
+        # Hash password if it's not already hashed
+        if not self.password.startswith('pbkdf2_'):
+            self.set_password(self.password)
+        super().save(*args, **kwargs)
+
 
 class WhatsAppConfig(models.Model):
 	access_token = models.CharField(max_length=512, help_text="WhatsApp API Access Token")
@@ -17,6 +48,14 @@ class Customer(models.Model):
 		help_text="Enter the full phone number in international format, e.g., +919876543210"
 	)
 	email = models.EmailField(blank=True, null=True)
+	assigned_agent = models.ForeignKey(
+		'Agent',
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name='assigned_customers',
+		help_text="Agent assigned to handle this customer's chats"
+	)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 

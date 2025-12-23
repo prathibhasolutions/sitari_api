@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import WhatsAppConfig, Customer, Message, Template
+from .models import WhatsAppConfig, Customer, Message, Template, Agent
+
+
+@admin.register(Agent)
+class AgentAdmin(admin.ModelAdmin):
+    list_display = ("name", "mobile_number", "is_active", "created_at")
+    search_fields = ("name", "mobile_number")
+    list_filter = ("is_active",)
+
 
 @admin.register(WhatsAppConfig)
 class WhatsAppConfigAdmin(admin.ModelAdmin):
