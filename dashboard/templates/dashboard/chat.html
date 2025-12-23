@@ -465,17 +465,18 @@
         .tick {
             display: inline-flex;
             align-items: center;
+            margin-left: 3px;
         }
         
         .tick svg {
-            width: 16px;
+            width: 18px;
             height: 11px;
         }
         
-        .tick.pending svg path { fill: rgba(255,255,255,0.5); stroke: rgba(255,255,255,0.5); }
-        .tick.sent svg path { fill: rgba(255,255,255,0.6); stroke: rgba(255,255,255,0.6); }
-        .tick.delivered svg path { fill: rgba(255,255,255,0.6); stroke: rgba(255,255,255,0.6); }
-        .tick.read svg path { fill: #53bdeb; stroke: #53bdeb; }
+        .tick.pending svg { color: rgba(255,255,255,0.5); }
+        .tick.sent svg { color: rgba(255,255,255,0.7); }
+        .tick.delivered svg { color: rgba(255,255,255,0.7); }
+        .tick.read svg { color: #53bdeb; }
         
         /* Make read ticks slightly brighter/bolder */
         .tick.read svg {
@@ -810,11 +811,11 @@
             document.getElementById('preview-name').textContent = '';
         }
         
-        // Single check SVG
-        const singleCheckSvg = `<svg viewBox="0 0 16 11"><path d="M11.071.653a.457.457 0 00-.304-.102.493.493 0 00-.381.178l-6.19 7.636-2.405-2.272a.463.463 0 00-.336-.146.47.47 0 00-.343.146l-.311.31a.445.445 0 00-.14.337c0 .136.047.25.14.343l2.996 2.996c.135.133.291.2.512.2a.682.682 0 00.496-.2l6.636-8.418a.479.479 0 00.108-.31.457.457 0 00-.102-.305l-.376-.393z"/></svg>`;
+        // Single check SVG (WhatsApp style)
+        const singleCheckSvg = `<svg viewBox="0 0 12 11" width="16" height="11"><path d="M11.155.653a.457.457 0 0 0-.305-.102.493.493 0 0 0-.38.178L4.28 8.365l-2.405-2.272a.463.463 0 0 0-.336-.146.47.47 0 0 0-.343.146l-.312.31a.446.446 0 0 0-.14.337c0 .136.047.25.14.344l2.997 2.996a.724.724 0 0 0 .512.2.682.682 0 0 0 .496-.2L11.49 1.26a.48.48 0 0 0 .107-.31.457.457 0 0 0-.102-.305l-.34-.392z" fill="currentColor"/></svg>`;
         
-        // Double check SVG
-        const doubleCheckSvg = `<svg viewBox="0 0 16 11"><path d="M11.071.653a.457.457 0 00-.304-.102.493.493 0 00-.381.178l-6.19 7.636-2.405-2.272a.463.463 0 00-.336-.146.47.47 0 00-.343.146l-.311.31a.445.445 0 00-.14.337c0 .136.047.25.14.343l2.996 2.996c.135.133.291.2.512.2a.682.682 0 00.496-.2l6.636-8.418a.479.479 0 00.108-.31.457.457 0 00-.102-.305l-.376-.393z"/><path d="M15.071.653a.457.457 0 00-.304-.102.493.493 0 00-.381.178l-6.19 7.636" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>`;
+        // Double check SVG (WhatsApp style - two overlapping checks)
+        const doubleCheckSvg = `<svg viewBox="0 0 16 11" width="20" height="11"><path d="M11.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178L4.197 8.365l-2.405-2.272a.463.463 0 0 0-.336-.146.47.47 0 0 0-.343.146l-.311.31a.446.446 0 0 0-.14.337c0 .136.046.25.14.344l2.996 2.996a.724.724 0 0 0 .512.2.682.682 0 0 0 .496-.2l6.636-8.418a.48.48 0 0 0 .108-.31.457.457 0 0 0-.102-.305l-.377-.392z" fill="currentColor"/><path d="M15.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178L8.197 8.365l-1.2-1.135-.776.982L7.697 9.68a.724.724 0 0 0 .512.2.682.682 0 0 0 .496-.2l6.636-8.418a.48.48 0 0 0 .108-.31.457.457 0 0 0-.102-.305l-.276-.392z" fill="currentColor"/></svg>`;
         
         // Fetch and render messages
         function fetchMessages() {
@@ -851,6 +852,8 @@
                                 tickHtml = `<span class="tick delivered">${doubleCheckSvg}</span>`;
                             } else if (status === 'read') {
                                 tickHtml = `<span class="tick read">${doubleCheckSvg}</span>`;
+                            } else if (status === 'failed') {
+                                tickHtml = `<span class="tick failed" title="Failed to send">⚠️</span>`;
                             }
                         }
                         
