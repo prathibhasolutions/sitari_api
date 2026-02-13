@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-huk%n1h)&-fhiuuzy-gtofsry+2dys4oz9fr&=yfu-6v9h1ehm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['www.whatsapp.sitarisolutions.in', 'whatsapp.sitarisolutions.in', '65.0.89.209', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['www.whatsapp.sitarisolutions.in', 'whatsapp.sitarisolutions.in', '3.110.86.17', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -118,8 +118,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+
+# Directory where collectstatic will collect static files for production
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Include your static source folders for development convenience
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
 
 # Media files (uploads)
 MEDIA_URL = '/media/'
