@@ -113,15 +113,53 @@ class WhatsAppWebhookView(APIView):
 					
 					customer, created = Customer.objects.get_or_create(phone_number=normalized_number)
 					
+					# Auto opt-in when customer messages first (Policy Compliance)
+					from django.utils import timezone
+					if not customer.opted_in:
+						customer.opted_in = True
+						customer.opt_in_method = 'whatsapp'
+						customer.opt_in_date = timezone.now()
+						logger.info(f"Auto opted-in customer via WhatsApp message")
+					
+					# Update 24-hour conversation window
+					customer.last_message_from_customer = timezone.now()
+					
 					# Update customer name if we got a profile name and customer has no name or just phone number
 					if profile_name and (not customer.name or customer.name == normalized_number or customer.name.startswith('+')):
 						customer.name = profile_name
-						customer.save()
 						logger.info(f"Updated customer name to: {profile_name}")
 					
-					logger.info(f"Customer {'created' if created else 'found'}: {customer.id}")
+					customer.save()
+					logger.info(f"Customer {'created' if created else 'found'}: {customer.id}, within 24hr window: Yes")
 					# Handle text and media
 					text = msg.get('text', {}).get('body', '')
+					
+					# Check for opt-out keywords (Policy Compliance)
+					opt_out_keywords = ['stop', 'unsubscribe', 'opt out', 'optout', 'quit', 'cancel']
+					if text and any(keyword in text.lower() for keyword in opt_out_keywords):
+						customer.opt_out()
+						logger.info(f"Customer opted out via keyword: {text}")
+						# Send confirmation (optional, but good practice)
+						from .whatsapp_api import send_whatsapp_message
+						send_whatsapp_message(
+							customer.phone_number,
+							template_name=None,
+							text="You have been unsubscribed. Reply START to opt back in."
+						)
+					
+					# Check for opt-in keywords
+					opt_in_keywords = ['start', 'subscribe', 'opt in', 'optin', 'yes']
+					if text and any(keyword in text.lower() for keyword in opt_in_keywords) and customer.opted_out:
+						customer.opt_in_customer(method='whatsapp')
+						logger.info(f"Customer re-opted-in via keyword: {text}")
+						# Send confirmation
+						from .whatsapp_api import send_whatsapp_message
+						send_whatsapp_message(
+							customer.phone_number,
+							template_name=None,
+							text="You have been subscribed. Reply STOP to unsubscribe anytime."
+						)
+					
 					media_url = None
 					media_type = None
 					# Check for image
@@ -179,9 +217,31 @@ class WhatsAppWebhookView(APIView):
 				for status_obj in statuses:
 					wa_id = status_obj.get('id')
 					status_str = status_obj.get('status')  # sent, delivered, read, failed
+					errors = status_obj.get('errors', [])
 					logger.info(f"Status update: wa_id={wa_id}, status={status_str}")
-					updated = Message.objects.filter(whatsapp_message_id=wa_id).update(status=status_str)
-					logger.info(f"Updated {updated} messages with status {status_str}")
+					
+					# Update message with timestamp and error tracking (Quality Monitoring)
+					from django.utils import timezone
+					try:
+						msg = Message.objects.get(whatsapp_message_id=wa_id)
+						msg.status = status_str
+						
+						if status_str == 'delivered' and not msg.delivered_at:
+							msg.delivered_at = timezone.now()
+						elif status_str == 'read' and not msg.read_at:
+							msg.read_at = timezone.now()
+						elif status_str == 'failed':
+							msg.failed_at = timezone.now()
+							if errors:
+								error = errors[0]
+								msg.error_code = error.get('code')
+								msg.error_message = error.get('message')
+								logger.error(f"Message failed: {msg.error_code} - {msg.error_message}")
+						
+						msg.save()
+						logger.info(f"Updated message {wa_id} with status {status_str}")
+					except Message.DoesNotExist:
+						logger.warning(f"Message with wa_id {wa_id} not found in database")
 		return Response({"status": "received"}, status=status.HTTP_200_OK)
 
 	def download_whatsapp_media(self, media_id):

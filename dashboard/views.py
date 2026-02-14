@@ -195,8 +195,35 @@ def chat_view(request, customer_id):
         content = request.POST.get('content', '')
         media = request.FILES.get('media')
         wa_id = None
-        from whatsapp.whatsapp_api import send_whatsapp_media
+        from whatsapp.whatsapp_api import send_whatsapp_media, validate_message_content
         logger.info(f"Sending message to {customer.phone_number}: {content}")
+        
+        # Content Validation (Policy Compliance)
+        if content:
+            is_valid, validation_error = validate_message_content(content)
+            if not is_valid:
+                django_messages.error(request, f"Message blocked: {validation_error}")
+                return redirect('dashboard-chat', pk=customer_id)
+        
+        # Policy Compliance Check
+        can_send, reason = customer.can_send_message()
+        if not can_send:
+            django_messages.error(request, f"Cannot send message: {reason}")
+            return redirect('dashboard-chat', pk=customer_id)
+        
+        # Rate Limit Check (Spam Prevention)
+        rate_ok, rate_reason = customer.check_rate_limit()
+        if not rate_ok:
+            django_messages.error(request, f"Rate limit: {rate_reason}")
+            return redirect('dashboard-chat', pk=customer_id)
+        
+        # Check if we can send free-form text (12-hour window)
+        can_freeform, freeform_reason = customer.can_send_freeform_text()
+        if not can_freeform and not media:
+            # Outside 12hr window - need to use template
+            django_messages.warning(request, f"{freeform_reason} Message not sent.")
+            return redirect('dashboard-chat', pk=customer_id)
+        
         # If media is uploaded, send it to WhatsApp
         if media:
             # Determine media type from file
@@ -274,6 +301,12 @@ def chat_view(request, customer_id):
     agents = Agent.objects.filter(is_active=True) if is_admin else []
     # Get agent name if logged in as agent
     agent_name = request.session.get('agent_name', '')
+    
+    # Policy compliance status for warnings (Safety Features)
+    can_send, send_reason = customer.can_send_message()
+    can_freeform, freeform_reason = customer.can_send_freeform_text()
+    within_24hr = customer.is_within_24hr_window()
+    
     return render(request, 'dashboard/chat.html', {
         'customer': customer,
         'messages': messages,
@@ -281,6 +314,13 @@ def chat_view(request, customer_id):
         'agents': agents,
         'agent_name': agent_name,
         'is_agent': request.session.get('is_agent', False),
+        'is_admin': is_admin,
+        # Policy compliance warnings
+        'can_send_message': can_send,
+        'send_reason': send_reason,
+        'can_send_freeform': can_freeform,
+        'freeform_reason': freeform_reason,
+        'within_24hr_window': within_24hr,
         'is_admin': is_admin,
     })
 
