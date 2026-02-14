@@ -1,0 +1,38 @@
+SSH into server and run these commands one by one:
+
+# 1. Check if the new code is on the server
+cd /home/ubuntu/sitari_api
+grep -n "opted_in" whatsapp/models.py | head -3
+
+# If you DON'T see "opted_in" in the output, then run:
+git pull origin main
+
+# 2. Check migration files
+ls -la whatsapp/migrations/ | grep -E "000[5-9]|00[1-9][0-9]"
+
+# 3. Activate virtual environment
+source venv/bin/activate
+
+# 4. Check for pending migrations
+python manage.py showmigrations whatsapp
+
+# 5. Create new migrations
+python manage.py makemigrations whatsapp
+
+# 6. Apply migrations
+python manage.py migrate
+
+# 7. Check database columns
+python manage.py dbshell
+.tables
+PRAGMA table_info(whatsapp_customer);
+.quit
+
+# 8. Restart Gunicorn
+sudo systemctl restart gunicorn
+
+# 9. View detailed error with traceback
+sudo journalctl -u gunicorn -n 200 --no-pager | grep -A 20 "Traceback"
+
+# 10. Check Gunicorn status
+sudo systemctl status gunicorn
