@@ -1,11 +1,13 @@
-
+# Database
+db.sqlite3
+*.sqlite3
 
 # Virtual environment
 venv/
 ENV/
 env/
 .venv/
-db.sqlite3
+
 
 
 
