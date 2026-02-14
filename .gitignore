@@ -5,7 +5,7 @@ venv/
 ENV/
 env/
 .venv/
-
+db.sqlite3
 
 
 
