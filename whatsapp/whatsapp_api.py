@@ -2,7 +2,7 @@
 
 import requests
 from .models import WhatsAppConfig
-WHATSAPP_PHONE_NUMBER_ID = "897101753497673"
+WHATSAPP_PHONE_NUMBER_ID = "216572227417183"
 
 
 def get_access_token():
