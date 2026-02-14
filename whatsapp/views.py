@@ -1,11 +1,15 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework.authentication import SessionAuthentication
 from .models import Customer, Message, Template
 
 from .serializers import CustomerSerializer, MessageSerializer, TemplateSerializer
 from .whatsapp_api import send_whatsapp_message
 from rest_framework.decorators import action
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 class CustomerViewSet(viewsets.ModelViewSet):
 	queryset = Customer.objects.all()
@@ -35,7 +39,10 @@ class TemplateViewSet(viewsets.ModelViewSet):
 	queryset = Template.objects.all()
 	serializer_class = TemplateSerializer
 
+@method_decorator(csrf_exempt, name='dispatch')
 class WhatsAppWebhookView(APIView):
+	permission_classes = [AllowAny]
+	authentication_classes = []
 	VERIFY_TOKEN = "mywhatsappverify124"  # Set this to your chosen verify token
 
 	def get(self, request, *args, **kwargs):
