@@ -59,6 +59,18 @@ class Customer(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
+	def clean_phone_number(self, phone):
+		"""Clean phone number to WhatsApp format (no +, spaces, or dashes)"""
+		if phone:
+			# Remove +, spaces, dashes, and parentheses
+			return phone.replace('+', '').replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+		return phone
+
+	def save(self, *args, **kwargs):
+		"""Override save to clean phone number"""
+		self.phone_number = self.clean_phone_number(self.phone_number)
+		super().save(*args, **kwargs)
+
 	def __str__(self):
 		return f"{self.name} ({self.phone_number})" if self.name else self.phone_number
 	
