@@ -223,7 +223,6 @@ class WhatsAppWebhookView(APIView):
 					try:
 						msg = Message.objects.get(whatsapp_message_id=wa_id)
 						msg.status = status_str
-						
 						if status_str == 'delivered' and not msg.delivered_at:
 							msg.delivered_at = timezone.now()
 						elif status_str == 'read' and not msg.read_at:
@@ -235,9 +234,10 @@ class WhatsAppWebhookView(APIView):
 								msg.error_code = error.get('code')
 								msg.error_message = error.get('message')
 								logger.error(f"Message failed: {msg.error_code} - {msg.error_message}")
-						
 						msg.save()
 						logger.info(f"Updated message {wa_id} with status {status_str}")
+					except Message.DoesNotExist:
+						logger.warning(f"Message with wa_id {wa_id} not found in database (status update ignored)")
 					except Message.DoesNotExist:
 						logger.warning(f"Message with wa_id {wa_id} not found in database")
 		return Response({"status": "received"}, status=status.HTTP_200_OK)
