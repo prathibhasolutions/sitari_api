@@ -113,15 +113,13 @@ class WhatsAppWebhookView(APIView):
 					
 					customer, created = Customer.objects.get_or_create(phone_number=normalized_number)
 					
-					# Auto opt-in when customer messages first (Policy Compliance)
+					# Always opt-in and reset 12hr window on every customer message (ultra-safe)
 					from django.utils import timezone
-					if not customer.opted_in:
-						customer.opted_in = True
-						customer.opt_in_method = 'whatsapp'
-						customer.opt_in_date = timezone.now()
-						logger.info(f"Auto opted-in customer via WhatsApp message")
-					
-					# Update 24-hour conversation window
+					customer.opted_in = True
+					customer.opt_in_method = 'whatsapp'
+					customer.opt_in_date = timezone.now()
+					logger.info(f"Auto opted-in customer via WhatsApp message (reset on every message)")
+					# Update 12-hour conversation window
 					customer.last_message_from_customer = timezone.now()
 					
 					# Update customer name if we got a profile name and customer has no name or just phone number
