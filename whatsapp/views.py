@@ -78,169 +78,174 @@ class WhatsAppWebhookView(APIView):
 	def post(self, request, *args, **kwargs):
 		import logging
 		logger = logging.getLogger("whatsapp.webhook")
-		data = request.data
-		logger.info(f"Webhook POST received: {data}")
-		# Handle WhatsApp webhook events
-		entry = data.get('entry', [])
-		for ent in entry:
-			changes = ent.get('changes', [])
-			for change in changes:
-				value = change.get('value', {})
-				messages = value.get('messages', [])
-				statuses = value.get('statuses', [])
-				contacts = value.get('contacts', [])
-				
-				# Build a map of wa_id -> profile name from contacts
-				contact_names = {}
-				for contact in contacts:
-					wa_id = contact.get('wa_id')
-					profile = contact.get('profile', {})
-					name = profile.get('name', '')
-					if wa_id and name:
-						contact_names[wa_id] = name
-				
-				logger.info(f"Processing {len(messages)} messages, {len(statuses)} statuses, contacts: {contact_names}")
-				
-				# Handle incoming messages
-				for msg in messages:
-					from_number = msg.get('from')
-					normalized_number = self.normalize_phone(from_number)
-					wa_id = msg.get('id')
+		try:
+			logger.info(f"Webhook POST received: {request.data}")
+			# Handle WhatsApp webhook events
+			entry = request.data.get('entry', [])
+			for ent in entry:
+				changes = ent.get('changes', [])
+				for change in changes:
+					value = change.get('value', {})
+					messages = value.get('messages', [])
+					statuses = value.get('statuses', [])
+					contacts = value.get('contacts', [])
 					
-					# Get profile name from contacts
-					profile_name = contact_names.get(from_number, '')
-					logger.info(f"Message from {from_number} -> normalized: {normalized_number}, wa_id: {wa_id}, profile: {profile_name}")
+					# Build a map of wa_id -> profile name from contacts
+					contact_names = {}
+					for contact in contacts:
+						wa_id = contact.get('wa_id')
+						profile = contact.get('profile', {})
+						name = profile.get('name', '')
+						if wa_id and name:
+							contact_names[wa_id] = name
 					
-					customer, created = Customer.objects.get_or_create(phone_number=normalized_number)
+					logger.info(f"Processing {len(messages)} messages, {len(statuses)} statuses, contacts: {contact_names}")
 					
-					# Always opt-in and reset 12hr window on every customer message (ultra-safe)
-					from django.utils import timezone
-					customer.opted_in = True
-					customer.opt_in_method = 'whatsapp'
-					customer.opt_in_date = timezone.now()
-					logger.info(f"Auto opted-in customer via WhatsApp message (reset on every message)")
-					# Update 12-hour conversation window
-					customer.last_message_from_customer = timezone.now()
-					
-					# Update customer name if we got a profile name and customer has no name or just phone number
-					if profile_name and (not customer.name or customer.name == normalized_number or customer.name.startswith('+')):
-						customer.name = profile_name
-						logger.info(f"Updated customer name to: {profile_name}")
-					
-					customer.save()
-					logger.info(f"Customer {'created' if created else 'found'}: {customer.id}, within 24hr window: Yes")
-					# Handle text and media
-					text = msg.get('text', {}).get('body', '')
-					
-					# Check for opt-out keywords (Policy Compliance)
-					opt_out_keywords = ['stop', 'unsubscribe', 'opt out', 'optout', 'quit', 'cancel']
-					if text and any(keyword in text.lower() for keyword in opt_out_keywords):
-						customer.opt_out()
-						logger.info(f"Customer opted out via keyword: {text}")
-						# Send confirmation (optional, but good practice)
-						from .whatsapp_api import send_whatsapp_message
-						send_whatsapp_message(
-							customer.phone_number,
-							template_name=None,
-							text="You have been unsubscribed. Reply START to opt back in."
-						)
-					
-					# Check for opt-in keywords
-					opt_in_keywords = ['start', 'subscribe', 'opt in', 'optin', 'yes']
-					if text and any(keyword in text.lower() for keyword in opt_in_keywords) and customer.opted_out:
-						customer.opt_in_customer(method='whatsapp')
-						logger.info(f"Customer re-opted-in via keyword: {text}")
-						# Send confirmation
-						from .whatsapp_api import send_whatsapp_message
-						send_whatsapp_message(
-							customer.phone_number,
-							template_name=None,
-							text="You have been subscribed. Reply STOP to unsubscribe anytime."
-						)
-					
-					media_url = None
-					media_type = None
-					# Check for image
-					if msg.get('type') == 'image' and 'image' in msg:
-						media_id = msg['image'].get('id')
-						logger.info(f"Processing image with media_id: {media_id}")
-						# Download media from WhatsApp
-						media_path, media_type = self.download_whatsapp_media(media_id)
-						logger.info(f"Downloaded image: path={media_path}, type={media_type}")
-					# Check for document
-					elif msg.get('type') == 'document' and 'document' in msg:
-						media_id = msg['document'].get('id')
-						logger.info(f"Processing document with media_id: {media_id}")
-						media_path, media_type = self.download_whatsapp_media(media_id)
-						logger.info(f"Downloaded document: path={media_path}, type={media_type}")
-					# Check for video
-					elif msg.get('type') == 'video' and 'video' in msg:
-						media_id = msg['video'].get('id')
-						logger.info(f"Processing video with media_id: {media_id}")
-						media_path, media_type = self.download_whatsapp_media(media_id)
-						logger.info(f"Downloaded video: path={media_path}, type={media_type}")
-					# Check for audio
-					elif msg.get('type') == 'audio' and 'audio' in msg:
-						media_id = msg['audio'].get('id')
-						logger.info(f"Processing audio with media_id: {media_id}")
-						media_path, media_type = self.download_whatsapp_media(media_id)
-						logger.info(f"Downloaded audio: path={media_path}, type={media_type}")
-					else:
-						media_path = None
+					# Handle incoming messages
+					for msg in messages:
+						from_number = msg.get('from')
+						normalized_number = self.normalize_phone(from_number)
+						wa_id = msg.get('id')
+						
+						# Get profile name from contacts
+						profile_name = contact_names.get(from_number, '')
+						logger.info(f"Message from {from_number} -> normalized: {normalized_number}, wa_id: {wa_id}, profile: {profile_name}")
+						
+						customer, created = Customer.objects.get_or_create(phone_number=normalized_number)
+						
+						# Always opt-in and reset 12hr window on every customer message (ultra-safe)
+						from django.utils import timezone
+						customer.opted_in = True
+						customer.opt_in_method = 'whatsapp'
+						customer.opt_in_date = timezone.now()
+						logger.info(f"Auto opted-in customer via WhatsApp message (reset on every message)")
+						# Update 12-hour conversation window
+						customer.last_message_from_customer = timezone.now()
+						
+						# Update customer name if we got a profile name and customer has no name or just phone number
+						if profile_name and (not customer.name or customer.name == normalized_number or customer.name.startswith('+')):
+							customer.name = profile_name
+							logger.info(f"Updated customer name to: {profile_name}")
+						
+						customer.save()
+						logger.info(f"Customer {'created' if created else 'found'}: {customer.id}, within 24hr window: Yes")
+						# Handle text and media
+						text = msg.get('text', {}).get('body', '')
+						
+						# Check for opt-out keywords (Policy Compliance)
+						opt_out_keywords = ['stop', 'unsubscribe', 'opt out', 'optout', 'quit', 'cancel']
+						if text and any(keyword in text.lower() for keyword in opt_out_keywords):
+							customer.opt_out()
+							logger.info(f"Customer opted out via keyword: {text}")
+							# Send confirmation (optional, but good practice)
+							from .whatsapp_api import send_whatsapp_message
+							send_whatsapp_message(
+								customer.phone_number,
+								template_name=None,
+								text="You have been unsubscribed. Reply START to opt back in."
+							)
+							
+						# Check for opt-in keywords
+						opt_in_keywords = ['start', 'subscribe', 'opt in', 'optin', 'yes']
+						if text and any(keyword in text.lower() for keyword in opt_in_keywords) and customer.opted_out:
+							customer.opt_in_customer(method='whatsapp')
+							logger.info(f"Customer re-opted-in via keyword: {text}")
+							# Send confirmation
+							from .whatsapp_api import send_whatsapp_message
+							send_whatsapp_message(
+								customer.phone_number,
+								template_name=None,
+								text="You have been subscribed. Reply STOP to unsubscribe anytime."
+							)
+							
+						media_url = None
 						media_type = None
-					
-					# Prevent duplicate messages by whatsapp_message_id
-					if not Message.objects.filter(whatsapp_message_id=wa_id).exists():
-						msg_obj = Message(
-							customer=customer,
-							content=text,
-							direction='received',
-							status='delivered',
-							whatsapp_message_id=wa_id
-						)
-						# Save media path if present
-						if media_path:
-							msg_obj.media.name = media_path
-							msg_obj.media_type = media_type
-							logger.info(f"Saved media to message: {media_path}")
-						msg_obj.save()
-						logger.info(f"Message saved with id: {msg_obj.id}")
+						# Check for image
+						if msg.get('type') == 'image' and 'image' in msg:
+							media_id = msg['image'].get('id')
+							logger.info(f"Processing image with media_id: {media_id}")
+							# Download media from WhatsApp
+							media_path, media_type = self.download_whatsapp_media(media_id)
+							logger.info(f"Downloaded image: path={media_path}, type={media_type}")
+						# Check for document
+						elif msg.get('type') == 'document' and 'document' in msg:
+							media_id = msg['document'].get('id')
+							logger.info(f"Processing document with media_id: {media_id}")
+							media_path, media_type = self.download_whatsapp_media(media_id)
+							logger.info(f"Downloaded document: path={media_path}, type={media_type}")
+						# Check for video
+						elif msg.get('type') == 'video' and 'video' in msg:
+							media_id = msg['video'].get('id')
+							logger.info(f"Processing video with media_id: {media_id}")
+							media_path, media_type = self.download_whatsapp_media(media_id)
+							logger.info(f"Downloaded video: path={media_path}, type={media_type}")
+						# Check for audio
+						elif msg.get('type') == 'audio' and 'audio' in msg:
+							media_id = msg['audio'].get('id')
+							logger.info(f"Processing audio with media_id: {media_id}")
+							media_path, media_type = self.download_whatsapp_media(media_id)
+							logger.info(f"Downloaded audio: path={media_path}, type={media_type}")
+						else:
+							media_path = None
+							media_type = None
+							
+						# Prevent duplicate messages by whatsapp_message_id
+						if not Message.objects.filter(whatsapp_message_id=wa_id).exists():
+							msg_obj = Message(
+								customer=customer,
+								content=text,
+								direction='received',
+								status='delivered',
+								whatsapp_message_id=wa_id
+							)
+							# Save media path if present
+							if media_path:
+								msg_obj.media.name = media_path
+								msg_obj.media_type = media_type
+								logger.info(f"Saved media to message: {media_path}")
+							msg_obj.save()
+							logger.info(f"Message saved with id: {msg_obj.id}")
 
-		# Handle delivery/read statuses
-		for ent in entry:
-			changes = ent.get('changes', [])
-			for change in changes:
-				value = change.get('value', {})
-				statuses = value.get('statuses', [])
-				for status_obj in statuses:
-					wa_id = status_obj.get('id')
-					status_str = status_obj.get('status')  # sent, delivered, read, failed
-					errors = status_obj.get('errors', [])
-					logger.info(f"Status update: wa_id={wa_id}, status={status_str}")
-					
-					# Update message with timestamp and error tracking (Quality Monitoring)
-					from django.utils import timezone
-					try:
-						msg = Message.objects.get(whatsapp_message_id=wa_id)
-						msg.status = status_str
-						if status_str == 'delivered' and not msg.delivered_at:
-							msg.delivered_at = timezone.now()
-						elif status_str == 'read' and not msg.read_at:
-							msg.read_at = timezone.now()
-						elif status_str == 'failed':
-							msg.failed_at = timezone.now()
-							if errors:
-								error = errors[0]
-								msg.error_code = error.get('code')
-								msg.error_message = error.get('message')
-								logger.error(f"Message failed: {msg.error_code} - {msg.error_message}")
-						msg.save()
-						logger.info(f"Updated message {wa_id} with status {status_str}")
-					except Message.DoesNotExist:
-						logger.warning(f"Message with wa_id {wa_id} not found in database (status update ignored)")
-					except Message.DoesNotExist:
-						logger.warning(f"Message with wa_id {wa_id} not found in database")
-		return Response({"status": "received"}, status=status.HTTP_200_OK)
+			# Handle delivery/read statuses
+			for ent in entry:
+				changes = ent.get('changes', [])
+				for change in changes:
+					value = change.get('value', {})
+					statuses = value.get('statuses', [])
+					for status_obj in statuses:
+						wa_id = status_obj.get('id')
+						status_str = status_obj.get('status')  # sent, delivered, read, failed
+						errors = status_obj.get('errors', [])
+						logger.info(f"Status update: wa_id={wa_id}, status={status_str}")
+						
+						# Update message with timestamp and error tracking (Quality Monitoring)
+						from django.utils import timezone
+						try:
+							msg = Message.objects.get(whatsapp_message_id=wa_id)
+							msg.status = status_str
+							if status_str == 'delivered' and not msg.delivered_at:
+								msg.delivered_at = timezone.now()
+							elif status_str == 'read' and not msg.read_at:
+								msg.read_at = timezone.now()
+							elif status_str == 'failed':
+								msg.failed_at = timezone.now()
+								if errors:
+									error = errors[0]
+									msg.error_code = error.get('code')
+									msg.error_message = error.get('message')
+									logger.error(f"Message failed: {msg.error_code} - {msg.error_message}")
+							msg.save()
+							logger.info(f"Updated message {wa_id} with status {status_str}")
+						except Message.DoesNotExist:
+							logger.warning(f"Message with wa_id {wa_id} not found in database (status update ignored)")
+						except Message.DoesNotExist:
+							logger.warning(f"Message with wa_id {wa_id} not found in database")
+			return Response({"status": "ok"})
+		except Exception as e:
+			import traceback
+			logger.error(f"Webhook error: {e}")
+			logger.error(traceback.format_exc())
+			return Response({"error": str(e)}, status=500)
 
 	def download_whatsapp_media(self, media_id):
 		"""
