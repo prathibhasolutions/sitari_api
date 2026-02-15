@@ -10,6 +10,7 @@ from .whatsapp_api import send_whatsapp_message
 from rest_framework.decorators import action
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.db import IntegrityError
 
 class CustomerViewSet(viewsets.ModelViewSet):
 	queryset = Customer.objects.all()
@@ -111,7 +112,11 @@ class WhatsAppWebhookView(APIView):
 						profile_name = contact_names.get(from_number, '')
 						logger.info(f"Message from {from_number} -> normalized: {normalized_number}, wa_id: {wa_id}, profile: {profile_name}")
 						
-						customer, created = Customer.objects.get_or_create(phone_number=normalized_number)
+						try:
+							customer, created = Customer.objects.get_or_create(phone_number=normalized_number)
+						except IntegrityError:
+							customer = Customer.objects.get(phone_number=normalized_number)
+							created = False
 						
 						# Always opt-in and reset 12hr window on every customer message (ultra-safe)
 						from django.utils import timezone
