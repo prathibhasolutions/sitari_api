@@ -194,25 +194,41 @@ def chat_view(request, customer_id):
     if request.method == 'POST':
         content = request.POST.get('content', '')
         media = request.FILES.get('media')
+        template_id = request.POST.get('template_id')
         wa_id = None
-        from whatsapp.whatsapp_api import send_whatsapp_media
+        from whatsapp.whatsapp_api import send_whatsapp_media, send_whatsapp_message
         logger.info(f"Sending message to {customer.phone_number}: {content}")
-        
-        # ...existing code...
-        
-        # If media is uploaded, send it to WhatsApp
-        if media:
+
+        if template_id:
+            # Send template message
+            from whatsapp.models import Template
+            template = Template.objects.filter(id=template_id).first()
+            template_name = template.name if template else None
+            api_response = send_whatsapp_message(customer.phone_number, template_name=template_name, text=None)
+            if isinstance(api_response, dict):
+                api_messages = api_response.get('messages')
+                if api_messages and isinstance(api_messages, list) and 'id' in api_messages[0]:
+                    wa_id = api_messages[0]['id']
+                elif 'messages' in api_response and isinstance(api_response['messages'], list):
+                    wa_id = api_response['messages'][0].get('id')
+                elif 'id' in api_response:
+                    wa_id = api_response['id']
+            Message.objects.create(
+                customer=customer,
+                template=template,
+                content=f"[TEMPLATE] {template_name}",
+                direction='sent',
+                status='pending',
+                whatsapp_message_id=wa_id
+            )
+        elif media:
             # Determine media type from file
             mime_type = media.content_type or mimetypes.guess_type(media.name)[0] or 'application/octet-stream'
             logger.info(f"Uploading media: {media.name}, type: {mime_type}")
-            
-            # Determine WhatsApp media type
             if mime_type.startswith('image/'):
                 wa_media_type = 'image'
             else:
                 wa_media_type = 'document'
-            
-            # Save the file first to get its URL
             msg = Message.objects.create(
                 customer=customer,
                 content=content,
@@ -221,7 +237,6 @@ def chat_view(request, customer_id):
                 direction='sent',
                 status='pending',
             )
-            # Build public URL for media (update to your actual domain)
             public_url = request.build_absolute_uri(msg.media.url)
             logger.info(f"Sending {wa_media_type} via WhatsApp: {public_url}")
             api_response = send_whatsapp_media(
@@ -263,21 +278,31 @@ def chat_view(request, customer_id):
                 status='pending',
                 whatsapp_message_id=wa_id
             )
-        # Redirect to chat page to prevent duplicate sending on reload
         from django.urls import reverse
         return redirect(reverse('dashboard-chat', args=[customer.id]))
+    from datetime import timedelta, timezone, datetime
     messages = Message.objects.filter(customer=customer).order_by('timestamp')
     # Mark received messages as read
     Message.objects.filter(customer=customer, direction='received', is_read=False).update(is_read=True)
-    # Pass all customers for sidebar navigation with preview
     customers = get_customers_with_preview(request)
-    # Check if user is admin
     is_admin = is_admin_user(request)
-    # Get all agents for assignment dropdown (admin only)
     agents = Agent.objects.filter(is_active=True) if is_admin else []
-    # Get agent name if logged in as agent
     agent_name = request.session.get('agent_name', '')
-    
+    from whatsapp.models import Template
+    templates = Template.objects.all().order_by('name')
+
+    # 18-hour rule: Only allow freeform if last received message is within 18 hours
+    last_received = Message.objects.filter(customer=customer, direction='received').order_by('-timestamp').first()
+    freeform_allowed = True
+    if last_received:
+        now = datetime.now(timezone.utc)
+        delta = now - last_received.timestamp
+        if delta.total_seconds() > 18 * 3600:
+            freeform_allowed = False
+    else:
+        # If no received message, allow freeform (or set to False if you want stricter)
+        freeform_allowed = True
+
     return render(request, 'dashboard/chat.html', {
         'customer': customer,
         'messages': messages,
@@ -286,6 +311,8 @@ def chat_view(request, customer_id):
         'agent_name': agent_name,
         'is_agent': request.session.get('is_agent', False),
         'is_admin': is_admin,
+        'templates': templates,
+        'freeform_allowed': freeform_allowed,
     })
 
 def chat_messages_api(request, customer_id):
