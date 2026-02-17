@@ -115,28 +115,32 @@ class WhatsAppWebhookView(APIView):
 						text = msg.get('text', {}).get('body', '')
 						media_url = None
 						media_type = None
+						# Handle media and captions
 						if msg.get('type') == 'image' and 'image' in msg:
 							media_id = msg['image'].get('id')
 							logger.info(f"Processing image with media_id: {media_id}")
 							media_path, media_type = self.download_whatsapp_media(media_id)
 							logger.info(f"Downloaded image: path={media_path}, type={media_type}")
+							# Use caption if present
+							text = msg['image'].get('caption', text)
 						elif msg.get('type') == 'document' and 'document' in msg:
 							media_id = msg['document'].get('id')
 							logger.info(f"Processing document with media_id: {media_id}")
 							media_path, media_type = self.download_whatsapp_media(media_id)
 							logger.info(f"Downloaded document: path={media_path}, type={media_type}")
-						# Check for video
+							text = msg['document'].get('caption', text)
 						elif msg.get('type') == 'video' and 'video' in msg:
 							media_id = msg['video'].get('id')
 							logger.info(f"Processing video with media_id: {media_id}")
 							media_path, media_type = self.download_whatsapp_media(media_id)
 							logger.info(f"Downloaded video: path={media_path}, type={media_type}")
-						# Check for audio
+							text = msg['video'].get('caption', text)
 						elif msg.get('type') == 'audio' and 'audio' in msg:
 							media_id = msg['audio'].get('id')
 							logger.info(f"Processing audio with media_id: {media_id}")
 							media_path, media_type = self.download_whatsapp_media(media_id)
 							logger.info(f"Downloaded audio: path={media_path}, type={media_type}")
+							# WhatsApp audio does not support captions, keep text as is
 						else:
 							media_path = None
 							media_type = None
