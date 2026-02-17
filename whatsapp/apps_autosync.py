@@ -15,6 +15,6 @@ class WhatsAppAutoSyncConfig(AppConfig):
                         call_command('sync_wa_templates')
                     except Exception as e:
                         print(f"[WA Template Sync Error] {e}")
-                    time.sleep(900)  # 15 minutes
+                    time.sleep(60)  # 1 minute (for testing)
             t = threading.Thread(target=sync_loop, daemon=True)
             t.start()
