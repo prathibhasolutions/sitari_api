@@ -759,6 +759,11 @@
                 <button type="button" class="preview-close" onclick="clearPreview()">×</button>
             </div>
             
+            {% if last_template_sync_ist %}
+            <div style="color:#00a884; background:#202c33; padding:4px 10px; border-radius:5px; margin-bottom:6px; font-size:13px;">
+                Last template sync (IST): {{ last_template_sync_ist }}
+            </div>
+            {% endif %}
             <form method="post" class="input-area" enctype="multipart/form-data">
                 {% csrf_token %}
                 <button type="button" class="input-btn" onclick="document.getElementById('file-input').click()" title="Attach" {% if not freeform_allowed %}disabled style="opacity:0.5;cursor:not-allowed;"{% endif %}>
