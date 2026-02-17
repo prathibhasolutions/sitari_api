@@ -81,17 +81,13 @@ class WhatsAppWebhookView(APIView):
 		logger = logging.getLogger("whatsapp.webhook")
 		try:
 			logger.info(f"Webhook POST received: {request.data}")
-			# Handle WhatsApp webhook events
 			entry = request.data.get('entry', [])
 			for ent in entry:
 				changes = ent.get('changes', [])
 				for change in changes:
 					value = change.get('value', {})
 					messages = value.get('messages', [])
-					statuses = value.get('statuses', [])
 					contacts = value.get('contacts', [])
-					
-					# Build a map of wa_id -> profile name from contacts
 					contact_names = {}
 					for contact in contacts:
 						wa_id = contact.get('wa_id')
@@ -99,80 +95,31 @@ class WhatsAppWebhookView(APIView):
 						name = profile.get('name', '')
 						if wa_id and name:
 							contact_names[wa_id] = name
-					
-					logger.info(f"Processing {len(messages)} messages, {len(statuses)} statuses, contacts: {contact_names}")
-					
-					# Handle incoming messages
+					logger.info(f"Processing {len(messages)} messages, contacts: {contact_names}")
 					for msg in messages:
 						from_number = msg.get('from')
 						normalized_number = self.normalize_phone(from_number)
 						wa_id = msg.get('id')
-						
-						# Get profile name from contacts
 						profile_name = contact_names.get(from_number, '')
 						logger.info(f"Message from {from_number} -> normalized: {normalized_number}, wa_id: {wa_id}, profile: {profile_name}")
-						
 						try:
 							customer, created = Customer.objects.get_or_create(phone_number=normalized_number)
 						except IntegrityError:
 							customer = Customer.objects.get(phone_number=normalized_number)
 							created = False
-						
-						# Always opt-in and reset 12hr window on every customer message (ultra-safe)
-						from django.utils import timezone
-						customer.opted_in = True
-						customer.opt_in_method = 'whatsapp'
-						customer.opt_in_date = timezone.now()
-						logger.info(f"Auto opted-in customer via WhatsApp message (reset on every message)")
-						# Update 12-hour conversation window
-						customer.last_message_from_customer = timezone.now()
-						
-						# Update customer name if we got a profile name and customer has no name or just phone number
 						if profile_name and (not customer.name or customer.name == normalized_number or customer.name.startswith('+')):
 							customer.name = profile_name
 							logger.info(f"Updated customer name to: {profile_name}")
-						
 						customer.save()
-						logger.info(f"Customer {'created' if created else 'found'}: {customer.id}, within 24hr window: Yes")
-						# Handle text and media
+						logger.info(f"Customer {'created' if created else 'found'}: {customer.id}")
 						text = msg.get('text', {}).get('body', '')
-						
-						# Check for opt-out keywords (Policy Compliance)
-						opt_out_keywords = ['stop', 'unsubscribe', 'opt out', 'optout', 'quit', 'cancel']
-						if text and any(keyword in text.lower() for keyword in opt_out_keywords):
-							customer.opt_out()
-							logger.info(f"Customer opted out via keyword: {text}")
-							# Send confirmation (optional, but good practice)
-							from .whatsapp_api import send_whatsapp_message
-							send_whatsapp_message(
-								customer.phone_number,
-								template_name=None,
-								text="You have been unsubscribed. Reply START to opt back in."
-							)
-							
-						# Check for opt-in keywords
-						opt_in_keywords = ['start', 'subscribe', 'opt in', 'optin', 'yes']
-						if text and any(keyword in text.lower() for keyword in opt_in_keywords) and customer.opted_out:
-							customer.opt_in_customer(method='whatsapp')
-							logger.info(f"Customer re-opted-in via keyword: {text}")
-							# Send confirmation
-							from .whatsapp_api import send_whatsapp_message
-							send_whatsapp_message(
-								customer.phone_number,
-								template_name=None,
-								text="You have been subscribed. Reply STOP to unsubscribe anytime."
-							)
-							
 						media_url = None
 						media_type = None
-						# Check for image
 						if msg.get('type') == 'image' and 'image' in msg:
 							media_id = msg['image'].get('id')
 							logger.info(f"Processing image with media_id: {media_id}")
-							# Download media from WhatsApp
 							media_path, media_type = self.download_whatsapp_media(media_id)
 							logger.info(f"Downloaded image: path={media_path}, type={media_type}")
-						# Check for document
 						elif msg.get('type') == 'document' and 'document' in msg:
 							media_id = msg['document'].get('id')
 							logger.info(f"Processing document with media_id: {media_id}")
