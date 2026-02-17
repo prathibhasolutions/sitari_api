@@ -829,8 +829,13 @@
                         return;
                     }
                     
+                    // Save scroll position and check if user is at/near bottom
+                    const prevScroll = container.scrollTop;
+                    const prevHeight = container.scrollHeight;
+                    const isAtBottom = (prevScroll + container.offsetHeight >= prevHeight - 50); // 50px tolerance
+
                     container.innerHTML = data.messages.map(msg => {
-                        // Handle media
+                        // ...existing code for rendering messages...
                         let mediaHtml = '';
                         if (msg.media_url) {
                             if (msg.media_type && msg.media_type.startsWith('image/')) {
@@ -839,8 +844,6 @@
                                 mediaHtml = `<a href="${msg.media_url}" target="_blank" class="download-link">📎 Download file</a><br>`;
                             }
                         }
-                        
-                        // Handle status ticks for outgoing messages
                         let tickHtml = '';
                         if (msg.direction === 'sent') {
                             const status = msg.status.toLowerCase();
@@ -856,9 +859,7 @@
                                 tickHtml = `<span class="tick failed" title="Failed to send">⚠️</span>`;
                             }
                         }
-                        
                         const direction = msg.direction === 'sent' ? 'outgoing' : 'incoming';
-                        
                         return `
                             <div class="message ${direction}">
                                 <div class="bubble">
@@ -872,8 +873,10 @@
                             </div>
                         `;
                     }).join('');
-                    
-                    container.scrollTop = container.scrollHeight;
+                    // Only scroll to bottom if user was at/near bottom before refresh
+                    if (isAtBottom) {
+                        container.scrollTop = container.scrollHeight;
+                    }
                 });
         }
         
