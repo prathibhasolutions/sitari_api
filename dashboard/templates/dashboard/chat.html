@@ -63,66 +63,68 @@
             gap: 8px;
         }
         
-        .header-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
+        let lastMessageCount = 0;
+        let firstLoad = true;
+        function fetchMessages() {
+            fetch('{% url "dashboard-chat-messages" customer.id %}')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('messages-container');
+                    if (!data.messages.length) {
+                        container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!'</div>;
+                        return;
+                    }
+                    // Save scroll position and check if user is at/near bottom
+                    const prevScroll = container.scrollTop;
+                    const prevHeight = container.scrollHeight;
+                    const isAtBottom = (prevScroll + container.offsetHeight >= prevHeight - 50); // 50px tolerance
+                    const prevCount = lastMessageCount;
+                    lastMessageCount = data.messages.length;
+                    container.innerHTML = data.messages.map(msg => {
+                        let mediaHtml = '';
+                        if (msg.media_url) {
+                            if (msg.media_type && msg.media_type.startsWith('image/')) {
+                                mediaHtml = `<img src="${msg.media_url}" class="bubble-media" alt="Image">`;
+                            } else {
+                                mediaHtml = `<a href="${msg.media_url}" target="_blank" class="download-link">📎 Download file</a><br>`;
+                            }
+                        }
+                        let tickHtml = '';
+                        if (msg.direction === 'sent') {
+                            const status = msg.status.toLowerCase();
+                            if (status === 'pending') {
+                                tickHtml = `<span class="tick pending">${singleCheckSvg}</span>`;
+                            } else if (status === 'sent') {
+                                tickHtml = `<span class="tick sent">${singleCheckSvg}</span>`;
+                            } else if (status === 'delivered') {
+                                tickHtml = `<span class="tick delivered">${doubleCheckSvg}</span>`;
+                            } else if (status === 'read') {
+                                tickHtml = `<span class="tick read">${doubleCheckSvg}</span>`;
+                            } else if (status === 'failed') {
+                                tickHtml = `<span class="tick failed" title="Failed to send">⚠️</span>`;
+                            }
+                        }
+                        const direction = msg.direction === 'sent' ? 'outgoing' : 'incoming';
+                        return `
+                            <div class="message ${direction}">
+                                <div class="bubble">
+                                    ${mediaHtml}
+                                    <span class="bubble-text">${msg.content}</span>
+                                    <span class="bubble-meta">
+                                        <span class="bubble-time">${msg.timestamp}</span>
+                                        ${tickHtml}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    // Only scroll to bottom on first load or if user was already at bottom
+                    if (firstLoad || isAtBottom) {
+                        container.scrollTop = container.scrollHeight;
+                        firstLoad = false;
+                    }
+                });
         }
-        
-        .header-btn:hover {
-            background: var(--bg-input);
-            color: var(--text-primary);
-        }
-        
-        .header-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: currentColor;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .logo-icon svg {
-            width: 24px;
-            height: 24px;
-            fill: white;
-        }
-        
-        .logo-text {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        
-        .search-box {
-            padding: 7px 12px;
-            background: var(--bg-default);
-        }
-        
-        .search-input {
             display: flex;
             align-items: center;
             background: var(--bg-input);
@@ -843,7 +845,8 @@
         const doubleCheckSvg = `<svg viewBox="0 0 16 11" width="20" height="11"><path d="M11.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178L4.197 8.365l-2.405-2.272a.463.463 0 0 0-.336-.146.47.47 0 0 0-.343.146l-.311.31a.446.446 0 0 0-.14.337c0 .136.046.25.14.344l2.996 2.996a.724.724 0 0 0 .512.2.682.682 0 0 0 .496-.2l6.636-8.418a.48.48 0 0 0 .108-.31.457.457 0 0 0-.102-.305l-.377-.392z" fill="currentColor"/><path d="M15.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178L8.197 8.365l-1.2-1.135-.776.982L7.697 9.68a.724.724 0 0 0 .512.2.682.682 0 0 0 .496-.2l6.636-8.418a.48.48 0 0 0 .108-.31.457.457 0 0 0-.102-.305l-.276-.392z" fill="currentColor"/></svg>`;
         
         // Fetch and render messages
-        function fetchMessages() {
+        let lastMessageCount = 0;
+        function fetchMessages(scrollToBottomOnNew = false) {
             fetch('{% url "dashboard-chat-messages" customer.id %}')
                 .then(response => response.json())
                 .then(data => {
@@ -856,6 +859,8 @@
                     const prevScroll = container.scrollTop;
                     const prevHeight = container.scrollHeight;
                     const isAtBottom = (prevScroll + container.offsetHeight >= prevHeight - 50); // 50px tolerance
+                    const prevCount = lastMessageCount;
+                    lastMessageCount = data.messages.length;
                     container.innerHTML = data.messages.map(msg => {
                         let mediaHtml = '';
                         if (msg.media_url) {
@@ -894,8 +899,8 @@
                             </div>
                         `;
                     }).join('');
-                    // Only scroll to bottom if user was at/near bottom before refresh
-                    if (isAtBottom) {
+                    // Always scroll to bottom on first load or if new messages arrived
+                    if (scrollToBottomOnNew || prevCount === 0 || lastMessageCount > prevCount || isAtBottom) {
                         container.scrollTop = container.scrollHeight;
                     }
                 });
@@ -933,7 +938,7 @@
                 });
         }
 
-        // Initial load
+        // Initial load: scroll to bottom only once
         fetchMessages();
         fetchSidebarContacts();
 
