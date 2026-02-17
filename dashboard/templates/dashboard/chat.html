@@ -113,40 +113,82 @@
                 .then(response => response.json())
                 .then(data => {
                     if (!data.contacts) return;
-                    data.contacts.forEach(contact => {
-                        const item = document.querySelector(`.contact-item[href$="/${contact.id}"]`);
-                        if (item) {
-                            // Update preview
-                            const preview = item.querySelector('.contact-preview');
-                            if (preview && contact.last_message !== undefined) {
-                                preview.textContent = contact.last_message;
-                            }
-                            // Update time
-                            const time = item.querySelector('.contact-time');
-                            if (time && contact.last_message_time_display !== undefined) {
-                                time.textContent = contact.last_message_time_display;
-                            }
-                            // Update unread badge
-                            const badge = item.querySelector('.unread-badge');
-                            if (badge) {
-                                if (contact.unread_count > 0) {
-                                    badge.textContent = contact.unread_count;
-                                    badge.style.display = 'block';
-                                } else {
-                                    badge.style.display = 'none';
-                                }
-                            } else if (contact.unread_count > 0) {
-                                // If badge doesn't exist, create it
-                                const meta = item.querySelector('.contact-meta');
-                                if (meta) {
-                                    const newBadge = document.createElement('div');
-                                    newBadge.className = 'unread-badge';
-                                    newBadge.textContent = contact.unread_count;
-                                    meta.appendChild(newBadge);
-                                }
-                            }
-                        }
+                    const list = document.querySelector('.contacts-list');
+                    if (!list) return;
+                    // Build a map of current items by contact id
+                    const currentItems = {};
+                    list.querySelectorAll('.contact-item').forEach(item => {
+                        const href = item.getAttribute('href');
+                        const match = href && href.match(/\/(\d+)\/?$/);
+                        if (match) currentItems[match[1]] = item;
                     });
+                    // If contact count/order changed, re-render all
+                    let needsFullRefresh = false;
+                    if (Object.keys(currentItems).length !== data.contacts.length) needsFullRefresh = true;
+                    else {
+                        // Check order
+                        const ids = Array.from(list.querySelectorAll('.contact-item')).map(item => {
+                            const href = item.getAttribute('href');
+                            const match = href && href.match(/\/(\d+)\/?$/);
+                            return match ? match[1] : null;
+                        });
+                        const newIds = data.contacts.map(c => c.id.toString());
+                        if (ids.join(',') !== newIds.join(',')) needsFullRefresh = true;
+                    }
+                    if (needsFullRefresh) {
+                        // Re-render all contacts
+                        list.innerHTML = data.contacts.map(contact => {
+                            return `
+                                <a class="contact-item${contact.is_active ? ' active' : ''}" href="/chat/${contact.id}/">
+                                    <div class="contact-avatar">${contact.avatar || (contact.name ? contact.name[0].toUpperCase() : contact.phone_number.slice(-1))}</div>
+                                    <div class="contact-info">
+                                        <div class="contact-name">${contact.name || contact.phone_number}</div>
+                                        <div class="contact-preview">${contact.last_message || ''}</div>
+                                    </div>
+                                    <div class="contact-meta">
+                                        <div class="contact-time">${contact.last_message_time_display || ''}</div>
+                                        ${contact.unread_count > 0 ? `<div class="unread-badge">${contact.unread_count}</div>` : ''}
+                                    </div>
+                                </a>
+                            `;
+                        }).join('');
+                    } else {
+                        // Update only changed fields
+                        data.contacts.forEach(contact => {
+                            const item = currentItems[contact.id];
+                            if (item) {
+                                // Update preview
+                                const preview = item.querySelector('.contact-preview');
+                                if (preview && contact.last_message !== undefined) {
+                                    preview.textContent = contact.last_message;
+                                }
+                                // Update time
+                                const time = item.querySelector('.contact-time');
+                                if (time && contact.last_message_time_display !== undefined) {
+                                    time.textContent = contact.last_message_time_display;
+                                }
+                                // Update unread badge
+                                const badge = item.querySelector('.unread-badge');
+                                if (badge) {
+                                    if (contact.unread_count > 0) {
+                                        badge.textContent = contact.unread_count;
+                                        badge.style.display = 'block';
+                                    } else {
+                                        badge.style.display = 'none';
+                                    }
+                                } else if (contact.unread_count > 0) {
+                                    // If badge doesn't exist, create it
+                                    const meta = item.querySelector('.contact-meta');
+                                    if (meta) {
+                                        const newBadge = document.createElement('div');
+                                        newBadge.className = 'unread-badge';
+                                        newBadge.textContent = contact.unread_count;
+                                        meta.appendChild(newBadge);
+                                    }
+                                }
+                            }
+                        });
+                    }
                 });
         }
         
