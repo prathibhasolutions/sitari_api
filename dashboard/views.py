@@ -102,10 +102,16 @@ def get_customers_with_preview(request):
     
     # Add last message to each customer
     customer_list = []
+    import pytz
+    ist = pytz.timezone('Asia/Kolkata')
     for c in customers:
         last_msg = Message.objects.filter(customer=c).order_by('-timestamp').first()
         c.last_message = last_msg.content[:30] + '...' if last_msg and len(last_msg.content) > 30 else (last_msg.content if last_msg else '')
-        c.last_message_time_display = last_msg.timestamp.strftime('%H:%M') if last_msg else ''
+        if last_msg:
+            ist_time = last_msg.timestamp.astimezone(ist)
+            c.last_message_time_display = ist_time.strftime('%H:%M')
+        else:
+            c.last_message_time_display = ''
         if last_msg and last_msg.media and not last_msg.content:
             c.last_message = '📷 Photo' if 'image' in (last_msg.media_type or '') else '📎 File'
         customer_list.append(c)
@@ -319,6 +325,8 @@ def chat_messages_api(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
     messages = Message.objects.filter(customer=customer).order_by('timestamp')
     data = []
+    import pytz
+    ist = pytz.timezone('Asia/Kolkata')
     for m in messages:
         media_url = m.media.url if m.media else ''
         # Use saved media_type if available, otherwise guess from extension
@@ -330,10 +338,11 @@ def chat_messages_api(request, customer_id):
             media_type = guessed_type or ''
         else:
             media_type = ''
+        ist_time = m.timestamp.astimezone(ist)
         data.append({
             'content': m.content,
             'direction': m.direction,
-            'timestamp': m.timestamp.strftime('%b %d, %Y %H:%M'),
+            'timestamp': ist_time.strftime('%b %d, %Y %H:%M'),
             'status': m.status.title(),
             'media_url': media_url,
             'media_type': media_type,
