@@ -84,6 +84,8 @@ class Template(models.Model):
 	body = models.TextField()
 	language = models.CharField(max_length=10, default='en')
 	created_at = models.DateTimeField(auto_now_add=True)
+	is_approved = models.BooleanField(default=False, help_text="True if template is approved in WhatsApp Business API")
+	wa_id = models.CharField(max_length=100, blank=True, null=True, help_text="WhatsApp template ID (if available)")
 
 	def __str__(self):
 		return self.name
