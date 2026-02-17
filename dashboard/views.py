@@ -303,12 +303,6 @@ def chat_view(request, customer_id):
         # If no received message, allow freeform (or set to False if you want stricter)
         freeform_allowed = True
 
-    # Get last template sync time from cache
-    try:
-        from django.core.cache import cache
-        last_template_sync_ist = cache.get('wa_templates_last_sync_ist')
-    except Exception:
-        last_template_sync_ist = None
     return render(request, 'dashboard/chat.html', {
         'customer': customer,
         'messages': messages,
@@ -319,14 +313,11 @@ def chat_view(request, customer_id):
         'is_admin': is_admin,
         'templates': templates,
         'freeform_allowed': freeform_allowed,
-        'last_template_sync_ist': last_template_sync_ist,
     })
 
 def chat_messages_api(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
     messages = Message.objects.filter(customer=customer).order_by('timestamp')
-    import pytz
-    ist = pytz.timezone('Asia/Kolkata')
     data = []
     for m in messages:
         media_url = m.media.url if m.media else ''
@@ -339,12 +330,10 @@ def chat_messages_api(request, customer_id):
             media_type = guessed_type or ''
         else:
             media_type = ''
-        # Convert timestamp to IST
-        ts_ist = m.timestamp.astimezone(ist)
         data.append({
             'content': m.content,
             'direction': m.direction,
-            'timestamp': ts_ist.strftime('%b %d, %Y %H:%M IST'),
+            'timestamp': m.timestamp.strftime('%b %d, %Y %H:%M'),
             'status': m.status.title(),
             'media_url': media_url,
             'media_type': media_type,
