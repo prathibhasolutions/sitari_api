@@ -1,3 +1,21 @@
+from django.views.decorators.http import require_GET
+# Sidebar contacts API for polling
+@require_GET
+def dashboard_chat_contacts_api(request):
+    if not check_access(request):
+        return JsonResponse({'contacts': []})
+    customers = get_customers_with_preview(request)
+    contacts = []
+    for c in customers:
+        contacts.append({
+            'id': c.id,
+            'name': c.name,
+            'phone_number': c.phone_number,
+            'last_message': getattr(c, 'last_message', ''),
+            'last_message_time_display': getattr(c, 'last_message_time_display', ''),
+            'unread_count': getattr(c, 'unread_count', 0),
+        })
+    return JsonResponse({'contacts': contacts})
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import authenticate, login

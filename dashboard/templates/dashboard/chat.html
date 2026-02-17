@@ -823,19 +823,15 @@
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById('messages-container');
-                    
                     if (!data.messages.length) {
-                        container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!</div>';
+                        container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!'</div>;
                         return;
                     }
-                    
                     // Save scroll position and check if user is at/near bottom
                     const prevScroll = container.scrollTop;
                     const prevHeight = container.scrollHeight;
                     const isAtBottom = (prevScroll + container.offsetHeight >= prevHeight - 50); // 50px tolerance
-
                     container.innerHTML = data.messages.map(msg => {
-                        // ...existing code for rendering messages...
                         let mediaHtml = '';
                         if (msg.media_url) {
                             if (msg.media_type && msg.media_type.startsWith('image/')) {
@@ -879,12 +875,57 @@
                     }
                 });
         }
-        
+
+        // Sidebar polling for contacts
+        function fetchSidebarContacts() {
+            fetch('{% url "dashboard-chat-contacts" %}')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.contacts) return;
+                    data.contacts.forEach(contact => {
+                        const item = document.querySelector(`.contact-item[href$="/${contact.id}"]`);
+                        if (item) {
+                            // Update preview
+                            const preview = item.querySelector('.contact-preview');
+                            if (preview && contact.last_message !== undefined) {
+                                preview.textContent = contact.last_message;
+                            }
+                            // Update time
+                            const time = item.querySelector('.contact-time');
+                            if (time && contact.last_message_time_display !== undefined) {
+                                time.textContent = contact.last_message_time_display;
+                            }
+                            // Update unread badge
+                            const badge = item.querySelector('.unread-badge');
+                            if (badge) {
+                                if (contact.unread_count > 0) {
+                                    badge.textContent = contact.unread_count;
+                                    badge.style.display = 'block';
+                                } else {
+                                    badge.style.display = 'none';
+                                }
+                            } else if (contact.unread_count > 0) {
+                                // If badge doesn't exist, create it
+                                const meta = item.querySelector('.contact-meta');
+                                if (meta) {
+                                    const newBadge = document.createElement('div');
+                                    newBadge.className = 'unread-badge';
+                                    newBadge.textContent = contact.unread_count;
+                                    meta.appendChild(newBadge);
+                                }
+                            }
+                        }
+                    });
+                });
+        }
+
         // Initial load
         fetchMessages();
-        
-        // Poll for new messages every 2 seconds
+        fetchSidebarContacts();
+
+        // Poll for new messages and sidebar updates every 2 seconds
         setInterval(fetchMessages, 2000);
+        setInterval(fetchSidebarContacts, 2000);
         
         // Search functionality
         document.getElementById('search-input').addEventListener('input', function(e) {
