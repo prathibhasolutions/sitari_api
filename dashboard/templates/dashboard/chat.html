@@ -922,8 +922,8 @@
         });
         
         function assignChat(agentId) {
-            const customerId = {{ customer.id }};
-            const csrfToken = '{{ csrf_token }}';
+            const customerId = "{{ customer.id }}";
+            const csrfToken = "{{ csrf_token }}";
             
             fetch(`/chat/${customerId}/assign/`, {
                 method: 'POST',
