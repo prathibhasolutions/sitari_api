@@ -63,68 +63,66 @@
             gap: 8px;
         }
         
-        let lastMessageCount = 0;
-        let firstLoad = true;
-        function fetchMessages() {
-            fetch('{% url "dashboard-chat-messages" customer.id %}')
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('messages-container');
-                    if (!data.messages.length) {
-                        container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!'</div>;
-                        return;
-                    }
-                    // Save scroll position and check if user is at/near bottom
-                    const prevScroll = container.scrollTop;
-                    const prevHeight = container.scrollHeight;
-                    const isAtBottom = (prevScroll + container.offsetHeight >= prevHeight - 50); // 50px tolerance
-                    const prevCount = lastMessageCount;
-                    lastMessageCount = data.messages.length;
-                    container.innerHTML = data.messages.map(msg => {
-                        let mediaHtml = '';
-                        if (msg.media_url) {
-                            if (msg.media_type && msg.media_type.startsWith('image/')) {
-                                mediaHtml = `<img src="${msg.media_url}" class="bubble-media" alt="Image">`;
-                            } else {
-                                mediaHtml = `<a href="${msg.media_url}" target="_blank" class="download-link">📎 Download file</a><br>`;
-                            }
-                        }
-                        let tickHtml = '';
-                        if (msg.direction === 'sent') {
-                            const status = msg.status.toLowerCase();
-                            if (status === 'pending') {
-                                tickHtml = `<span class="tick pending">${singleCheckSvg}</span>`;
-                            } else if (status === 'sent') {
-                                tickHtml = `<span class="tick sent">${singleCheckSvg}</span>`;
-                            } else if (status === 'delivered') {
-                                tickHtml = `<span class="tick delivered">${doubleCheckSvg}</span>`;
-                            } else if (status === 'read') {
-                                tickHtml = `<span class="tick read">${doubleCheckSvg}</span>`;
-                            } else if (status === 'failed') {
-                                tickHtml = `<span class="tick failed" title="Failed to send">⚠️</span>`;
-                            }
-                        }
-                        const direction = msg.direction === 'sent' ? 'outgoing' : 'incoming';
-                        return `
-                            <div class="message ${direction}">
-                                <div class="bubble">
-                                    ${mediaHtml}
-                                    <span class="bubble-text">${msg.content}</span>
-                                    <span class="bubble-meta">
-                                        <span class="bubble-time">${msg.timestamp}</span>
-                                        ${tickHtml}
-                                    </span>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                    // Only scroll to bottom on first load or if user was already at bottom
-                    if (firstLoad || isAtBottom) {
-                        container.scrollTop = container.scrollHeight;
-                        firstLoad = false;
-                    }
-                });
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
         }
+        
+        .header-btn:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+        
+        .header-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+        
+        .logo-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .search-box {
+            padding: 7px 12px;
+            background: var(--bg-default);
+        }
+        
+        .search-input {
             display: flex;
             align-items: center;
             background: var(--bg-input);
@@ -752,32 +750,7 @@
             </div>
             
             <div class="messages-container" id="messages-container">
-                {% for msg in messages %}
-                <div class="message {% if msg.direction == 'sent' %}outgoing{% else %}incoming{% endif %}">
-                    <div class="bubble">
-                        {% if msg.media %}
-                            {% if msg.media_type and msg.media_type|slice:":6" == "image/" %}
-                                <img src="{{ msg.media.url }}" class="bubble-media" alt="Image">
-                            {% else %}
-                                <a href="{{ msg.media.url }}" target="_blank" class="download-link">📎 Download file</a><br>
-                            {% endif %}
-                        {% endif %}
-                        <span class="bubble-text">{{ msg.content }}</span>
-                        <span class="bubble-meta">
-                            <span class="bubble-time">{{ msg.timestamp|date:'b d, Y H:i' }}</span>
-                            {% if msg.direction == 'sent' %}
-                                {% if msg.status == 'pending' %}<span class="tick pending">✓</span>{% endif %}
-                                {% if msg.status == 'sent' %}<span class="tick sent">✓</span>{% endif %}
-                                {% if msg.status == 'delivered' %}<span class="tick delivered">✓✓</span>{% endif %}
-                                {% if msg.status == 'read' %}<span class="tick read">✓✓</span>{% endif %}
-                                {% if msg.status == 'failed' %}<span class="tick failed" title="Failed to send">⚠️</span>{% endif %}
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="empty-state">No messages yet. Start the conversation!</div>
-                {% endfor %}
+                <!-- Messages loaded via JavaScript -->
             </div>
             
             <div class="preview-area" id="preview-area">
@@ -845,22 +818,20 @@
         const doubleCheckSvg = `<svg viewBox="0 0 16 11" width="20" height="11"><path d="M11.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178L4.197 8.365l-2.405-2.272a.463.463 0 0 0-.336-.146.47.47 0 0 0-.343.146l-.311.31a.446.446 0 0 0-.14.337c0 .136.046.25.14.344l2.996 2.996a.724.724 0 0 0 .512.2.682.682 0 0 0 .496-.2l6.636-8.418a.48.48 0 0 0 .108-.31.457.457 0 0 0-.102-.305l-.377-.392z" fill="currentColor"/><path d="M15.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178L8.197 8.365l-1.2-1.135-.776.982L7.697 9.68a.724.724 0 0 0 .512.2.682.682 0 0 0 .496-.2l6.636-8.418a.48.48 0 0 0 .108-.31.457.457 0 0 0-.102-.305l-.276-.392z" fill="currentColor"/></svg>`;
         
         // Fetch and render messages
-        let lastMessageCount = 0;
-        function fetchMessages(scrollToBottomOnNew = false) {
+        let firstLoad = true;
+        function fetchMessages() {
             fetch('{% url "dashboard-chat-messages" customer.id %}')
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById('messages-container');
                     if (!data.messages.length) {
-                        container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!'</div>;
+                        container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!</div>';
                         return;
                     }
                     // Save scroll position and check if user is at/near bottom
                     const prevScroll = container.scrollTop;
                     const prevHeight = container.scrollHeight;
                     const isAtBottom = (prevScroll + container.offsetHeight >= prevHeight - 50); // 50px tolerance
-                    const prevCount = lastMessageCount;
-                    lastMessageCount = data.messages.length;
                     container.innerHTML = data.messages.map(msg => {
                         let mediaHtml = '';
                         if (msg.media_url) {
@@ -899,52 +870,19 @@
                             </div>
                         `;
                     }).join('');
-                    // Always scroll to bottom on first load or if new messages arrived
-                    if (scrollToBottomOnNew || prevCount === 0 || lastMessageCount > prevCount || isAtBottom) {
+                    // Only scroll to bottom on first load or if user was already at bottom
+                    if (firstLoad || isAtBottom) {
                         container.scrollTop = container.scrollHeight;
+                        firstLoad = false;
                     }
                 });
         }
-
-        // Sidebar polling for contacts
-        function fetchSidebarContacts() {
-            fetch('{% url "dashboard-chat-contacts" %}')
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.contacts) return;
-                    const list = document.querySelector('.contacts-list');
-                    if (!list) return;
-                    // Rebuild the sidebar contact list for full sync
-                    let html = '';
-                    data.contacts.forEach(contact => {
-                        html += `
-                        <a class="contact-item${contact.id == {{ customer.id }} ? ' active' : ''}" href="/chat/${contact.id}/">
-                            <div class="contact-avatar">${contact.name ? contact.name.charAt(0).toUpperCase() : contact.phone_number.slice(-1)}</div>
-                            <div class="contact-info">
-                                <div class="contact-name">${contact.name || contact.phone_number}</div>
-                                <div class="contact-preview">${contact.last_message || ''}</div>
-                            </div>
-                            <div class="contact-meta">
-                                <div class="contact-time">${contact.last_message_time_display || ''}</div>
-                                ${contact.unread_count > 0 ? `<div class="unread-badge">${contact.unread_count}</div>` : ''}
-                            </div>
-                        </a>
-                        `;
-                    });
-                    if (data.contacts.length === 0) {
-                        html = '<div style="padding: 30px; text-align: center; color: var(--text-secondary);">No contacts yet</div>';
-                    }
-                    list.innerHTML = html;
-                });
-        }
-
-        // Initial load: scroll to bottom only once
+        
+        // Initial load
         fetchMessages();
-        fetchSidebarContacts();
-
-        // Poll for new messages and sidebar updates every 2 seconds
+        
+        // Poll for new messages every 2 seconds
         setInterval(fetchMessages, 2000);
-        setInterval(fetchSidebarContacts, 2000);
         
         // Search functionality
         document.getElementById('search-input').addEventListener('input', function(e) {

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     portal_view, agent_login_view, admin_login_view, logout_view,
     dashboard_home, chat_view, chat_messages_api, privacy_view, terms_view,
-    assign_chat, dashboard_chat_contacts_api
+    assign_chat
 )
 
 urlpatterns = [
@@ -16,5 +16,4 @@ urlpatterns = [
     path('chat/<int:customer_id>/assign/', assign_chat, name='assign-chat'),
     path('privacy/', privacy_view, name='privacy'),
     path('terms/', terms_view, name='terms'),
-    path('chat/contacts/', dashboard_chat_contacts_api, name='dashboard-chat-contacts'),
 ]
