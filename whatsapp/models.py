@@ -61,7 +61,11 @@ class Customer(models.Model):
 
 	def clean_phone_number(self, phone):
 		if phone:
-			return phone.replace('+', '').replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+			# Remove spaces, dashes, parentheses, but keep '+' if present
+			phone = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+			if not phone.startswith('+'):
+				phone = '+' + phone
+			return phone
 		return phone
 
 	def save(self, *args, **kwargs):
