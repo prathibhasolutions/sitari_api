@@ -48,67 +48,106 @@
             flex-direction: column;
         }
         
-        .sidebar-header {
-            padding: 10px 16px;
-            background: var(--bg-panel);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 59px;
+        // Fetch and render messages
+        function fetchMessages() {
+            fetch('{% url "dashboard-chat-messages" customer.id %}')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('messages-container');
+                    if (!data.messages.length) {
+                        container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation!</div>';
+                        return;
+                    }
+                    // Save scroll position and check if user is at/near bottom
+                    const prevScroll = container.scrollTop;
+                    const prevHeight = container.scrollHeight;
+                    const isAtBottom = (prevScroll + container.offsetHeight >= prevHeight - 50); // 50px tolerance
+                    container.innerHTML = data.messages.map(msg => {
+                        let mediaHtml = '';
+                        if (msg.media_url) {
+                            if (msg.media_type && msg.media_type.startsWith('image/')) {
+                                mediaHtml = `<img src="${msg.media_url}" class="bubble-media" alt="Image">`;
+                            } else {
+                                mediaHtml = `<a href="${msg.media_url}" target="_blank" class="download-link">📎 Download file</a><br>`;
+                            }
+                        }
+                        let tickHtml = '';
+                        if (msg.direction === 'sent') {
+                            const status = msg.status.toLowerCase();
+                            if (status === 'pending') {
+                                tickHtml = `<span class="tick pending">${singleCheckSvg}</span>`;
+                            } else if (status === 'sent') {
+                                tickHtml = `<span class="tick sent">${singleCheckSvg}</span>`;
+                            } else if (status === 'delivered') {
+                                tickHtml = `<span class="tick delivered">${doubleCheckSvg}</span>`;
+                            } else if (status === 'read') {
+                                tickHtml = `<span class="tick read">${doubleCheckSvg}</span>`;
+                            } else if (status === 'failed') {
+                                tickHtml = `<span class="tick failed" title="Failed to send">⚠️</span>`;
+                            }
+                        }
+                        const direction = msg.direction === 'sent' ? 'outgoing' : 'incoming';
+                        return `
+                            <div class="message ${direction}">
+                                <div class="bubble">
+                                    ${mediaHtml}
+                                    <span class="bubble-text">${msg.content}</span>
+                                    <span class="bubble-meta">
+                                        <span class="bubble-time">${msg.timestamp}</span>
+                                        ${tickHtml}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    // Only scroll to bottom if user was at/near bottom before refresh
+                    if (isAtBottom) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                });
         }
-        
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .header-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        
-        .header-btn:hover {
-            background: var(--bg-input);
-            color: var(--text-primary);
-        }
-        
-        .header-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: currentColor;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .logo-icon svg {
-            width: 24px;
-            height: 24px;
-            fill: white;
+
+        // Sidebar polling for contacts
+        function fetchSidebarContacts() {
+            fetch('{% url "dashboard-chat-contacts" %}')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.contacts) return;
+                    data.contacts.forEach(contact => {
+                        const item = document.querySelector(`.contact-item[href$="/${contact.id}"]`);
+                        if (item) {
+                            // Update preview
+                            const preview = item.querySelector('.contact-preview');
+                            if (preview && contact.last_message !== undefined) {
+                                preview.textContent = contact.last_message;
+                            }
+                            // Update time
+                            const time = item.querySelector('.contact-time');
+                            if (time && contact.last_message_time_display !== undefined) {
+                                time.textContent = contact.last_message_time_display;
+                            }
+                            // Update unread badge
+                            const badge = item.querySelector('.unread-badge');
+                            if (badge) {
+                                if (contact.unread_count > 0) {
+                                    badge.textContent = contact.unread_count;
+                                    badge.style.display = 'block';
+                                } else {
+                                    badge.style.display = 'none';
+                                }
+                            } else if (contact.unread_count > 0) {
+                                // If badge doesn't exist, create it
+                                const meta = item.querySelector('.contact-meta');
+                                if (meta) {
+                                    const newBadge = document.createElement('div');
+                                    newBadge.className = 'unread-badge';
+                                    newBadge.textContent = contact.unread_count;
+                                    meta.appendChild(newBadge);
+                                }
+                            }
+                        }
+                    });
+                });
         }
         
         .logo-text {
@@ -880,9 +919,11 @@
         
         // Initial load
         fetchMessages();
-        
-        // Poll for new messages every 2 seconds
+        fetchSidebarContacts();
+
+        // Poll for new messages and sidebar updates every 2 seconds
         setInterval(fetchMessages, 2000);
+        setInterval(fetchSidebarContacts, 2000);
         
         // Search functionality
         document.getElementById('search-input').addEventListener('input', function(e) {
